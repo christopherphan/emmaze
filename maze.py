@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from random import choice, random, sample
 from typing import Final, NamedTuple, Optional
 
 DIRECTIONS: Final[list[str]] = ["north", "south", "east", "west"]
+
+logging.basicConfig(filename="maze.log", encoding="utf-8", level=logging.DEBUG)
 
 
 class Position(NamedTuple):
@@ -71,10 +75,17 @@ class MazeCell:
         self.maze = maze
         self.position = position
         self.adjacent = AdjacencyInfo(None, None, None, None)
-        self.walls = WallInfo()
+        self.walls = WallInfo(True, True, True, True)
         if self.maze is not None and self.position is not None:
             self.maze.set_pos(self.position, self)
         self.update_neighbors()
+
+    def _update_neighbors_log(self: MazeCell, direction: str, other_cell: MazeCell):
+        """Make a log entry for updating neighbor info."""
+        logging.info(
+            f"Updating cell at {self.position} to have a"
+            + f" neighbor to the {direction} at {other_cell.position}"
+        )
 
     def update_neighbors(self: MazeCell, direction: Optional[str] = None) -> None:
         """Update neighbor information."""
@@ -86,28 +97,33 @@ class MazeCell:
                 and row > 0
                 and (c := self.maze.cells[row - 1][column]) is not None
             ):
+                self._update_neighbors_log("north", c)
                 self.adjacent.north = c
             if (
                 direction in [None, "south"]
                 and row < self.maze.rows - 1
                 and (c := self.maze.cells[row + 1][column]) is not None
             ):
+                self._update_neighbors_log("south", c)
                 self.adjacent.south = c
             if (
                 direction in [None, "west"]
                 and column > 0
                 and (c := self.maze.cells[row][column - 1]) is not None
             ):
+                self._update_neighbors_log("west", c)
                 self.adjacent.west = c
             if (
                 direction in [None, "east"]
                 and column < self.maze.cols - 1
                 and (c := self.maze.cells[row][column + 1]) is not None
             ):
+                self._update_neighbors_log("east", c)
                 self.adjacent.east = c
 
     def remove_wall(self: MazeCell, direction: str) -> None:
         """Remove the wall in a given direction."""
+        logging.info(f"Removing {direction} wall from cell at {self.position}.")
         if direction == "north" and (c := self.adjacent.north) is not None:
             self.walls.north = False
             c.walls.south = False
@@ -145,14 +161,14 @@ class MazeExit:
 class Maze:
     """Represent a whole maze."""
 
-    def __init__(
-        self: Maze, rows: int, cols: int, exits: tuple[MazeExit, MazeExit]
-    ) -> None:
+    def __init__(self: Maze, rows: int, cols: int, exits: Sequence[MazeExit]) -> None:
         """Initialize a new object."""
-        self.cells: list[list[Optional[MazeCell]]] = [[None] * cols] * rows
+        self.cells: list[list[Optional[MazeCell]]] = [
+            [None for _2 in range(cols)] for _ in range(rows)
+        ]
         self.rows = rows
         self.cols = cols
-        self.exits = exits[0].print_location(self), exits[1].print_location(self)
+        self.exits = [a.print_location(self) for a in exits]
 
     def set_pos(self: Maze, position: Position, cell: MazeCell):
         """Place a MazeCell in a position."""
@@ -163,6 +179,7 @@ class Maze:
         if column < 0 or column >= self.cols:
             raise ValueError
         self.cells[row][column] = cell
+        logging.info(f"Placed cell at row {row}, column {column}. Cell info: {cell}")
         if row > 0 and (c := self.cells[row - 1][column]) is not None:
             c.update_neighbors("south")
         if row < self.rows - 1 and (c := self.cells[row + 1][column]) is not None:
@@ -172,6 +189,19 @@ class Maze:
         if column < self.cols - 1 and (c := self.cells[row][column + 1]) is not None:
             c.update_neighbors("west")
 
+    def _solid_log(
+        self: Maze, x: int, y: int, answer: bool, cell: Optional[MazeCell] = None
+    ):
+        if cell:
+            cell_text = f", which represents the cell at {cell.position}."
+        else:
+            cell_text = "."
+        logging.info(
+            f"Determining character at position ({x}, {y})"
+            + cell_text
+            + f" Answer: {answer}"
+        )
+
     def solid(self: Maze, x: int, y: int) -> bool:
         """
         Return True if location (x, y) is inside a wall.
@@ -179,18 +209,29 @@ class Maze:
         Note that the cell in position (0, 0) will take up locations (0, 0) to (3, 3),
         the cell in position (0, 1) will take up locations (3, 0) to (6, 3), etc.
         """
-        if ((x <= 0 or x >= 2 * self.cols) or (y <= 0 or y >= 2 * self.rows)) and (
-            x,
-            y,
-        ) not in self.exits:
-            return True
-        if x % 2 == 0 and y % 2 == 0:
-            return True
-        if x % 2 == 0:
-            return (c := self.cells[(y - 1) // 2][x // 2]) is None or c.walls.east
-        if y % 2 == 0:
-            return (c := self.cells[y // 2][(x - 1) // 2]) is None or c.walls.north
-        return self.cells[(y - 1) // 2][(x - 1) // 2] is None
+        logging.info(f" Running ``solid({x}, {y})``. Note {x // 2 =} and {y // 2=}.")
+        # Edges
+        if (x <= 0 or x >= 2 * self.cols) or (y <= 0 or y >= 2 * self.rows):
+            self._solid_log(x, y, res := (x, y) not in self.exits)
+        elif x % 2 == 0 and y % 2 == 0:
+            self._solid_log(x, y, res := True)
+        elif x % 2 == 0:
+            self._solid_log(
+                x,
+                y,
+                res := (c := self.cells[y // 2][x // 2]) is None or c.walls.east,
+                c,
+            )
+        elif y % 2 == 0:
+            self._solid_log(
+                x,
+                y,
+                res := (c := self.cells[y // 2][x // 2]) is None or c.walls.north,
+                c,
+            )
+        else:
+            self._solid_log(x, y, res := (c := self.cells[y // 2][x // 2]) is None, c)
+        return res
 
     def __str__(self: Maze) -> str:
         """Return ASCII art version of the maze."""
@@ -232,10 +273,12 @@ class MazeWorker:
     """Knocks down walls to make a maze, and occasionally spawns."""
 
     def __init__(
-        self: MazeWorker, initial_cell: MazeCell, spawn_frequency: float
+        self: MazeWorker,
+        initial_cell: MazeCell,
+        spawn_frequency: float = 0,
     ) -> None:
         """Initialize object."""
-        self.current_cell = initial_cell
+        self.current_cell: MazeCell = initial_cell
         self.spawn_frequency = spawn_frequency
         self.maze_constructor: Optional[MazeConstructor] = None
         self.path: list[MazeCell] = [initial_cell]
@@ -273,6 +316,10 @@ class MazeWorker:
         self.current_cell = n
         self.path.append(n)
         self.maze_constructor.visited |= {n}
+        logging.info(
+            f"MazeWorker {self.maze_constructor.workers.index(self)}"
+            + f" moved to {n.position}"
+        )
 
     def spawn(self: MazeWorker, direction: str) -> None:
         """Knock down a wall and spawn."""
@@ -285,40 +332,79 @@ class MazeWorker:
         self.current_cell.remove_wall(direction)
         spawned = MazeWorker(n, self.spawn_frequency)
         self.maze_constructor.add_worker(spawned)
+        logging.info(
+            f"MazeWorker {self.maze_constructor.workers.index(self)}"
+            + f" spawned in {n.position} ({direction})."
+        )
 
-    def step(self: MazeWorker, can_spawn: bool = True) -> None:
+    def step(self: MazeWorker) -> None:
         """Knock down a wall and possibly spawn."""
         if self.maze_constructor is None:
             raise ValueError("Maze constructor is not set.")
-        if self.alive and (un := self.unvisited_neighbors):
-            if can_spawn and random() < self.spawn_frequency and len(un.keys()) >= 2:
-                places = sample(un.keys(), 2)
+        if not self.alive:
+            return None
+        while self.alive and not (un := self.unvisited_neighbors):
+            self.backtrack()
+        if self.alive:
+            logging.info(
+                "Unvisted neighbors are: "
+                + "".join(
+                    str((key, item.position))
+                    for key, item in self.unvisited_neighbors.items()
+                )
+            )
+            if random() < self.spawn_frequency and len(un.keys()) >= 2:
+                places = sample(sorted(un.keys()), 2)
                 self.spawn(places[0])
                 self.move(places[1])
             else:
                 place = choice(list(un.keys()))
                 self.move(place)
-        elif self.alive:
-            self.backtrack()
 
-    def backtrack(self: MazeWorker) -> None:
+    def backtrack(self: MazeWorker):
         """Go back to a cell with unvisited neighbors."""
         if self.path:
             self.path.pop()
+        if self.path:
             self.current_cell = self.path[-1]
-            self.step(False)
+            assert self.maze_constructor is not None
+            logging.info(
+                f"MazeWorker {self.maze_constructor.workers.index(self)}"
+                + f" backtracks to {self.current_cell.position}."
+            )
         else:
             self.alive = False
 
 
-if __name__ == "__main__":
-    # main program
-    maze = Maze(20, 20, (MazeExit("north", 5), MazeExit("south", 15)))
-    for row in range(20):
-        for col in range(20):
-            c = MazeCell(maze, Position(row, col))
-    assert maze.cells[0][0] is not None
-    mw = MazeWorker(maze.cells[0][0], 0)
+def make_maze(
+    rows: int,
+    cols: int,
+    exits: Sequence[MazeExit],
+    mazeworker_start: Optional[Position] = None,
+    spawn_probability: float = 0,
+) -> Maze:
+    """Make a maze."""
+    maze = Maze(rows, cols, exits)
+    for row in range(rows):
+        for col in range(cols):
+            MazeCell(maze, Position(row, col))
+    if mazeworker_start is None:
+        mazeworker_start = Position(0, 0)
+    if isinstance(
+        mz := maze.cells[mazeworker_start.row][mazeworker_start.column], MazeCell
+    ):
+        mw = MazeWorker(mz, 0.05)
+    else:
+        raise ValueError
     mc = MazeConstructor([mw])
     mc.run_all()
+    return maze
+
+
+if __name__ == "__main__":
+    # main program
+    logging.info("-------------------------- NEW EXECUTION -----------------------")
+    maze = make_maze(
+        20, 30, (MazeExit("north", 10), MazeExit("east", 18)), Position(10, 15), 0.01
+    )
     print(maze)

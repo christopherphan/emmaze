@@ -3,3 +3,4 @@ __pycache__
 activate
 *.pyc
 .ipynb_checkpoints
+*.log
