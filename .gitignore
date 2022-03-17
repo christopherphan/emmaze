@@ -4,3 +4,4 @@ activate
 *.pyc
 .ipynb_checkpoints
 *.log
+maze_output.html
