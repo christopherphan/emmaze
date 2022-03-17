@@ -1,3 +1,4 @@
+#!/usr/bin/env/python3 python
 """Module for making SVG mazes."""
 
 from __future__ import annotations
@@ -92,6 +93,7 @@ class GraphicalCoordinates:
             return self.__class__(self.x - other.x, self.y - other.y)
         return NotImplemented
 
+    @property
     def length_squared(self: GraphicalCoordinates) -> float:
         """Return the square of the length of the object."""
         return self.x**2 + self.y**2
@@ -563,10 +565,10 @@ class SVGData:
 
 if __name__ == "__main__":
     maze = mz.make_maze(
-        80,
-        120,
-        (mz.MazeExit("north", 60), mz.MazeExit("east", 40)),
-        mz.Position(10, 15),
+        10,
+        10,
+        (mz.MazeExit("north", 1), mz.MazeExit("east", 9)),
+        mz.Position(5, 5),
         0.05,
     )
     svg_data = SVGData(maze, 1000, 700, GraphicalCoordinates(100, 100))
@@ -577,7 +579,7 @@ if __name__ == "__main__":
           }
 
           div.pic {
-            width: 90vw;
+            width: 50vw;
             margin: 2vw;
           }
     """
@@ -585,7 +587,10 @@ if __name__ == "__main__":
     style_elt = svgfunctions.Element("style", interior=[style_info])
     title = svgfunctions.Element("title", interior="MAZE!", seperate_interior=False)
     head = svgfunctions.Element("head", interior=[title, style_elt])
-    body = svgfunctions.Element("body", interior=[svg_data.walls_SVG])
+    pic = svgfunctions.Element(
+        "div", interior=[svg_data.SVG], attributes={"class": "pic"}
+    )
+    body = svgfunctions.Element("body", interior=[pic])
     html = svgfunctions.Element("html", interior=[head, body])
 
     with open("maze_output.html", "wt") as outfile:
