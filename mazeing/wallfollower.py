@@ -10,7 +10,7 @@ from numbers import Real
 from typing import Final, Literal, NamedTuple, Optional
 
 import maze as mz
-import svgfunctions
+import _svgfunctions as svgfunctions
 
 WALL_THICKNESS_SETTING = Literal["cellsize", "absolute"]
 
