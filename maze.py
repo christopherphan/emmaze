@@ -19,7 +19,7 @@ DIAG_DIRECTIONS: Final[list[DIAG_DIRECTION_TYPE]] = [
     (ns, ew) for ns in NS_DIRECTIONS for ew in EW_DIRECTIONS
 ]
 
-logging.basicConfig(filename="maze.log", encoding="utf-8", level=logging.INFO)
+logging.basicConfig(filename="maze.log", encoding="utf-8", level=logging.WARNING)
 
 
 class Position(NamedTuple):
@@ -37,6 +37,16 @@ class Position(NamedTuple):
         if isinstance(other, Position):
             return self.__class__(self.row + other.row, self.column + other.column)
         return NotImplemented
+
+    def __sub__(self: Position, other) -> Position:
+        """Return ``self - other``."""
+        if isinstance(other, Position):
+            return self.__class__(self.row - other.row, self.column - other.column)
+        return NotImplemented
+
+    def get_cell(self: Position, maze: Maze) -> Optional[MazeCell]:
+        """Get the cell at the position."""
+        return maze.cells[self.row][self.column]
 
 
 @dataclass
