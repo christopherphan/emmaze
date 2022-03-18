@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-"""Generate a random maze."""
+"""Classes for generating and displaying random mazes."""
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
 from random import choice, random, sample
-from typing import Final, Literal, NamedTuple, Optional
+from typing import Final, Literal, NamedTuple, Optional, TypeAlias
 
-DIRECTION_TYPE = Literal["north", "south", "east", "west"]
+DIRECTION_TYPE: TypeAlias = Literal["north", "south", "east", "west"]
 NS_DIRECTIONS: Final[list[DIRECTION_TYPE]] = ["north", "south"]
 EW_DIRECTIONS: Final[list[DIRECTION_TYPE]] = ["east", "west"]
 DIRECTIONS: Final[list[DIRECTION_TYPE]] = ["north", "south", "east", "west"]
@@ -19,11 +17,17 @@ DIAG_DIRECTIONS: Final[list[DIAG_DIRECTION_TYPE]] = [
     (ns, ew) for ns in NS_DIRECTIONS for ew in EW_DIRECTIONS
 ]
 
-logging.basicConfig(filename="maze.log", encoding="utf-8", level=logging.WARNING)
-
 
 class Position(NamedTuple):
-    """Represent coordinates in the maze."""
+    """
+    Represent the location of a cell in the maze.
+
+    :param row: The row of the cell
+    :type row: int
+
+    :param column: The column of the cell
+    :type column: int
+    """
 
     row: int
     column: int
@@ -45,13 +49,46 @@ class Position(NamedTuple):
         return NotImplemented
 
     def get_cell(self: Position, maze: Maze) -> Optional[MazeCell]:
-        """Get the cell at the position."""
+        """
+        Get the cell with this position.
+
+        :param maze: The maze from which to retrieve the cell.
+        :type maze: Maze
+
+        :returns: The cell at the desired position, if there is one. Otherwise,
+            ``None`` is returned.
+        :rtype: Optional[MazeCell]
+        """
         return maze.cells[self.row][self.column]
 
 
 @dataclass
 class WallInfo:
-    """Record info about the walls."""
+    """
+    Keep track of information about walls.
+
+    This is a ``dataclass`` that provides a ``bool`` for each of the four cardinal
+    directions.
+
+    This is used by ``MazeCell`` objects to record the walls of each cell. It is also
+    used in the ``wallfollower`` classes to keep track of which walls have been
+    accounted for.
+
+    :param north: The status of the north wall. Defaults to ``True``.
+    :type north: bool
+
+    :param south: The status of the south wall. Defaults to ``True``.
+    :type south: bool
+
+    :param east: The status of the east wall. Defaults to ``True``.
+    :type east: bool
+
+    :param west: The status of the west wall. Defaults to ``True``.
+    :type west: bool
+
+    In addition to, e.g., ``self.west``, the syntax ``self["west"]`` can be used
+    to access and set a field.
+    """
 
     north: bool = True
     south: bool = True
@@ -101,7 +138,30 @@ class WallInfo:
 
 @dataclass
 class AdjacencyInfo:
-    """Record information about neighboring MazeCells."""
+    """
+    Record information about neighboring MazeCells.
+
+    This is a ``dataclass`` that provides a ``MazeCell`` (or ``None``) for each of the
+    four cardinal directions.
+
+    These represent the cells that are adjacent in that direction (but does not
+    necessarily indicate that there is a passage between the cells).
+
+    :param north: The cell to the north
+    :type north: Optional[MazeCell]
+
+    :param south: The cell to the south
+    :type south: Optional[MazeCell]
+
+    :param east: The cell to the east
+    :type east: Optional[MazeCell]
+
+    :param west: The cell to the west
+    :type west: Optional[MazeCell]
+
+    In addition to, e.g., ``self.west``, the syntax ``self["west"]`` can be used
+    to access and set a field.
+    """
 
     north: Optional[MazeCell]
     south: Optional[MazeCell]
@@ -118,6 +178,19 @@ class AdjacencyInfo:
             return self.east
         if key == "west":
             return self.west
+
+    def __setitem__(
+        self: AdjacencyInfo, key: DIRECTION_TYPE, value: Optional[MazeCell]
+    ) -> None:
+        """Allow ``self[key]``to be an alias for ``self.key``."""
+        if key == "north":
+            self.north = value
+        if key == "south":
+            self.south = value
+        if key == "east":
+            self.east = value
+        if key == "west":
+            self.west = value
 
 
 class MazeCell:
@@ -158,7 +231,6 @@ class MazeCell:
             Defaults to ``None``. Otherwise, should be one of ``"north"``, ``"south"``,
             ``"east"``, or ``"west"``. (All other inputs are ignored.)
         :type direction: Optional[DIRECTION_TYPE]
-
         """
         if self.maze is not None and self.position is not None:
             row = self.position.row
@@ -201,7 +273,6 @@ class MazeCell:
             will be ignored.
         :type direction: DIRECTION_TYPE
         """
-        logging.info(f"Removing {direction} wall from cell at {self.position}.")
         if direction == "north" and (c := self.adjacent.north) is not None:
             self.walls.north = False
             c.walls.south = False
@@ -218,13 +289,29 @@ class MazeCell:
 
 @dataclass
 class MazeExit:
-    """Represent an exit of the maze."""
+    """
+    Represent an exit of the maze.
+
+    :param wall: The side of the maze with contains the exit
+    :type wall: DIRECTION_TYPE
+
+    :param location: The row/column of the exit
+    :type location: int
+    """
 
     wall: DIRECTION_TYPE
     location: int
 
     def print_location(self: MazeExit, maze: Maze) -> tuple[int, int]:
-        """Give the location coordinates for printout."""
+        """
+        Return the location in an ASCII maze for the exit.
+
+        :param maze: The maze in which the exit is placed.
+        :type maze: Maze
+
+        :returns: The coordinates of the exit.
+        :rtype: tuple[int, int]
+        """
         if self.wall == "north":
             return (2 * self.location + 1, 0)
         if self.wall == "west":
@@ -236,7 +323,15 @@ class MazeExit:
         raise ValueError("Invalid direction.")
 
     def cell_position(self: MazeExit, maze: Maze) -> Position:
-        """Give the cell position of the exit."""
+        """
+        Give the cell position (row and column) of the exit.
+
+        :param maze: The maze in which the exit is placed.
+        :type maze: Maze
+
+        :returns: The position of the cell next to the exit.
+        :rtype: Position
+        """
         if self.wall == "north":
             return Position(0, self.location)
         if self.wall == "west":
@@ -249,7 +344,24 @@ class MazeExit:
 
 
 class Maze:
-    """Represent a whole maze."""
+    """
+    Represent a whole maze.
+
+    A maze comprises a rectangular array of cells.
+
+    :param rows: The number of rows of cells in the maze.
+    :type rows: int
+
+    :param cols: The number of columns of cells in the maze.
+    :type cols: int
+
+    :param exits: Information about the exits of the maze.
+    :type exits: Sequence[MazeExit]
+
+    :ivar cells: The cells of the maze
+    :vartype cells: list[list[Optional[MazeCell]]]
+
+    """
 
     def __init__(self: Maze, rows: int, cols: int, exits: Sequence[MazeExit]) -> None:
         """Initialize a new object."""
@@ -268,7 +380,18 @@ class Maze:
         )
 
     def set_pos(self: Maze, position: Position, cell: MazeCell):
-        """Place a MazeCell in a position."""
+        """
+        Place a MazeCell in a position.
+
+        This method puts ``cell`` in ``self.cells[position.row][position.column]``
+        and then updates all the appropriate ``AdjacencyInfo`` objects.
+
+        :param position: The position in which to place the cell.
+        :type position: Position
+
+        :param cell: The cell to place.
+        :type cell: MazeCell
+        """
         row = position.row
         column = position.column
         if row < 0 or row >= self.rows:
@@ -287,7 +410,7 @@ class Maze:
 
     def solid(self: Maze, x: int, y: int) -> bool:
         """
-        Return True if location (x, y) is inside a wall.
+        Return ``True`` if location (``x``, ``y``) in an ASCII-art version of the maze is inside a wall.
 
         Note that the cell in position (0, 0) will take up locations (0, 0) to (3, 3),
         the cell in position (0, 1) will take up locations (3, 0) to (6, 3), etc.
@@ -303,7 +426,17 @@ class Maze:
         return (c := self.cells[y // 2][x // 2]) is None
 
     def ascii_version(self: Maze, wall_chr: str = "#") -> str:
-        """Return ASCII art version of the maze."""
+        """
+        Return ASCII art version of the maze.
+
+        In this output, each cell is one character, and each wall is one character.
+
+        :param wall_chr: The character that represents a wall.
+        :type wall_chr: str
+
+        :returns: An ASCII-art version of the maze.
+        :rtype: str
+        """
         return "\n".join(
             "".join(
                 wall_chr if self.solid(x, y) else " " for x in range(2 * self.cols + 1)
@@ -325,13 +458,6 @@ class MazeConstructor:
         self.visited: set[MazeCell] = {w.current_cell for w in self.workers}
         for w in self.workers:
             w.set_MazeConstructor(self)
-        logging.info(
-            "MazeConstructor created with MazeWorkers: "
-            + ", ".join(
-                f"Worker {idx} at {w.current_cell.position}"
-                for idx, w in enumerate(self.workers)
-            )
-        )
 
     def add_worker(self: MazeConstructor, worker: MazeWorker):
         """Add a worker to the constuctor."""
@@ -398,7 +524,6 @@ class MazeWorker:
         self.current_cell = n
         self.path.append(n)
         self.maze_constructor.visited |= {n}
-        logging.info(f"MazeWorker {self.worker_number}" + f" moved to {n.position}")
 
     def spawn(self: MazeWorker, direction: DIRECTION_TYPE) -> None:
         """Knock down a wall and spawn."""
@@ -411,10 +536,6 @@ class MazeWorker:
         self.current_cell.remove_wall(direction)
         spawned = MazeWorker(n, self.spawn_frequency)
         self.maze_constructor.add_worker(spawned)
-        logging.info(
-            f"MazeWorker {self.worker_number}"
-            + f" spawned in {n.position} ({direction})."
-        )
 
     def step(self: MazeWorker) -> None:
         """Knock down a wall and possibly spawn."""
@@ -425,11 +546,6 @@ class MazeWorker:
         while self.alive and not (un := self.unvisited_neighbors):
             self.backtrack()
         if self.alive:
-            logging.info(
-                f"MazeWorker {self.worker_number} at"
-                + f" {self.current_cell.position}, with unvisited neighbors to the: "
-                + ", ".join(str(key) for key in self.unvisited_neighbors)
-            )
             if random() < self.spawn_frequency and len(un.keys()) >= 2:
                 places = sample(sorted(un.keys()), 2)
                 self.spawn(places[0])
@@ -444,12 +560,7 @@ class MazeWorker:
             self.path.pop()
         if self.path:
             self.current_cell = self.path[-1]
-            logging.info(
-                f"MazeWorker {self.worker_number}"
-                + f" backtracks to {self.current_cell.position}."
-            )
         else:
-            logging.info(f"MazeWorker {self.worker_number} retired")
             self.alive = False
 
     @property
@@ -490,9 +601,6 @@ def make_maze(
 
 if __name__ == "__main__":
     # main program
-    logging.info(
-        f"---- NEW EXECUTION of maze.py: {datetime.now()} -----------------------"
-    )
     maze = make_maze(
         20, 30, (MazeExit("north", 10), MazeExit("east", 18)), Position(10, 15), 0.05
     )

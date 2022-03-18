@@ -5,3 +5,6 @@ activate
 .ipynb_checkpoints
 *.log
 maze_output.html
+docs/build
+docs/Makefile
+docs/make.bat

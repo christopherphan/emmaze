@@ -1,28 +1,67 @@
+"""Helper functions for making SVG files."""
+
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from textwrap import indent
 from typing import Literal, Optional
 
 
 class Element:
+    """
+    Represents an HTML/XML element.
+
+    :param name: The name of the element
+    :type name: str
+
+    :param attributes: The attributes of the element. Defaults to ``dict()``.
+    :type attributes: Optional[Mapping[str, str]]
+
+    :param interior: The contents of the element. Defaults to ``[]``.
+    :type interior: Optional[Sequence[str | Element]]
+
+    :param self_closing: When set to ``True``, the element will be self closing
+        (e.g. ``<br />``). Defaults to ``False``.
+    :type self_closing: bool
+
+    :param separate_interior: When set to ``True``, place the interior on separate lines
+        in the output. Defaults to ``True``.
+    :type separate_interior: bool
+    `
+    """
+
     def __init__(
         self: Element,
         name: str,
-        attributes: Optional[dict[str, str]] = None,
+        attributes: Optional[Mapping[str, str]] = None,
         interior: Optional[Sequence[str | Element]] = None,
         self_closing: bool = False,
-        seperate_interior: bool = True,
+        separate_interior: bool = True,
     ) -> None:
+        """Initialize object."""
         self.name = name
-        self.attributes = attributes if attributes else dict()
+        self.attributes = dict(attributes) if attributes else dict()
         self.interior = interior if interior else []
         self.self_closing = self_closing
-        self.seperate_interior = seperate_interior
+        self.separate_interior = separate_interior
 
     def output(
         self: Element, indentation: int = 0, additional_indentation: int = 2
     ) -> str:
+        """
+        Generate the HTML/XML of the element.
+
+        :param indentation: The number of spaces to indent the element. Defaults
+            to 0.
+        :type indentation: int
+
+        :param additional_indentation: The number of spaces to indent elements in the
+            interior. Defaults to 2.
+        :type additional_indentation: int
+
+        :returns: The HTML/XML of the element.
+        :rtype: str
+        """
         out_str = f"<{self.name} " + " ".join(
             [f'{key}="{self.attributes[key]}" ' for key in self.attributes]
         )
@@ -38,11 +77,11 @@ class Element:
                         " " * additional_indentation,
                     )
                 elif isinstance(item, str):
-                    if self.seperate_interior:
+                    if self.separate_interior:
                         out_str += "\n" + indent(item, " " * additional_indentation)
                     else:
                         out_str += item
-            if self.seperate_interior:
+            if self.separate_interior:
                 out_str += "\n"
             out_str += f"</{self.name}>"
         else:
@@ -50,6 +89,12 @@ class Element:
         return indent(out_str, " " * indentation)
 
     def __str__(self: Element) -> str:
+        """
+        Return ``str(self)``.
+
+        Equivalaent to ``self.output()``.
+
+        """
         return self.output()
 
     @classmethod
@@ -57,6 +102,17 @@ class Element:
         cls: type[Element],
         objects: Sequence[Element],
     ) -> Element:
+        """
+        Make an SVG group.
+
+        Wrapps the ``Element`` objects in ``objects`` in a ``<g>`` SVG element.
+
+        :param objects: the elements to include in the group.
+        :type objects: Sequence[Element]
+
+        :returns: A ``g`` element with the ``objects`` as the interior.
+        :rtype: Element
+        """
         return cls("g", interior=objects)
 
     @classmethod
@@ -67,8 +123,34 @@ class Element:
         stroke: str = "none",
         fill: str = "none",
         id_: Optional[str] = None,
-        attributes: Optional[dict[str, str]] = None,
+        attributes: Optional[Mapping[str, str]] = None,
     ) -> Element:
+        """
+        Create an SVG polygon or polyline.
+
+        :param coords: Coordinates for the polygon/line.
+        :type coords: Sequence[tuple[int | float, int | float]]
+
+        :param type_: Element to create (``polygon`` or ``polyline``)
+        :type type_: Literal["polyline", "polygon"]
+
+        :param stroke: Value of the SVG ``stroke`` attribute. Defaults to ``"none"``.
+        :type stroke: str
+
+        :param fill: Value of the SVG ``fill`` attribute. Defaults to ``"none"``.
+        :type fill: str
+
+        :param id_: Value of the SVG ``id`` attribute. If omitted, the attribute is
+            not provided.
+        :type id_: Optional[str]
+
+        :param attributes: Other attributes to be included in the element. Defaults to
+            ``dict()``.
+        :type attributes: Optional[Mapping[str, str]]
+
+        :returns: An SVG ``polygon`` or ``polyline`` element.
+        :rtype: Element
+        """
         attribs = (
             (
                 {
@@ -89,8 +171,31 @@ class Element:
         stroke: str = "none",
         fill: str = "none",
         id_: Optional[str] = None,
-        attributes: Optional[dict[str, str]] = None,
+        attributes: Optional[Mapping[str, str]] = None,
     ) -> Element:
+        """
+        Create an SVG ``polyline`` element.
+
+        :param coords: Coordinates for the polyline.
+        :type coords: Sequence[tuple[int | float, int | float]]
+
+        :param stroke: Value of the SVG ``stroke`` attribute. Defaults to ``"none"``.
+        :type stroke: str
+
+        :param fill: Value of the SVG ``fill`` attribute. Defaults to ``"none"``.
+        :type fill: str
+
+        :param id_: Value of the SVG ``id`` attribute. If omitted, the attribute is
+            not provided.
+        :type id_: Optional[str]
+
+        :param attributes: Other attributes to be included in the element. Defaults to
+            ``dict()``.
+        :type attributes: Optional[Mapping[str, str]]
+
+        :returns: An SVG ``polyline`` element.
+        :rtype: Element
+        """
         return cls._make_svg_polything(
             coords, "polyline", stroke, fill, id_, attributes
         )
@@ -104,6 +209,29 @@ class Element:
         id_: Optional[str] = None,
         attributes: Optional[dict[str, str]] = None,
     ) -> Element:
+        """
+        Create an SVG ``polygon`` element.
+
+        :param coords: Coordinates for the polygon.
+        :type coords: Sequence[tuple[int | float, int | float]]
+
+        :param stroke: Value of the SVG ``stroke`` attribute. Defaults to ``"none"``.
+        :type stroke: str
+
+        :param fill: Value of the SVG ``fill`` attribute. Defaults to ``"none"``.
+        :type fill: str
+
+        :param id_: Value of the SVG ``id`` attribute. If omitted, the attribute is
+            not provided.
+        :type id_: Optional[str]
+
+        :param attributes: Other attributes to be included in the element. Defaults to
+            ``dict()``.
+        :type attributes: Optional[Mapping[str, str]]
+
+        :returns: An SVG ``polygon`` element.
+        :rtype: Element
+        """
         return cls._make_svg_polything(coords, "polygon", stroke, fill, id_, attributes)
 
     @classmethod
@@ -114,8 +242,29 @@ class Element:
         ],
         stroke: str = "black",
         id_: Optional[str] = None,
-        attributes: Optional[dict[str, str]] = None,
+        attributes: Mapping[dict[str, str]] = None,
     ) -> Element:
+        """
+        Make an SVG ``line`` element.
+
+        :param corners: The endpoints of the line.
+        :type corners: tuple[tuple[int | float, int | float],
+            tuple[int | float, int | float]]
+
+        :param stroke: Value of the SVG ``stroke`` attribute. Defaults to ``"black"``.
+        :type stroke: str
+
+        :param id_: Value of the SVG ``id`` attribute. If omitted, the attribute is
+            not provided.
+        :type id_: Optional[str]
+
+        :param attributes: Other attributes to be included in the element. Defaults to
+            ``dict()``.
+        :type attributes: Optional[Mapping[str, str]]
+
+        :returns: An SVG ``line`` element.
+        :rtype: Element
+        """
         attribs = (
             ({"id": id_} if id_ else {})
             | (
@@ -138,8 +287,32 @@ class Element:
         stroke: str = "none",
         fill: str = "none",
         id_: Optional[str] = None,
-        attributes: Optional[dict[str, str]] = None,
+        attributes: Mapping[dict[str, str]] = None,
     ) -> Element:
+        """
+        Make an SVG ``rect`` element.
+
+        :param corners: Opposite corners of the rectangle.
+        :type corners: tuple[tuple[int | float, int | float],
+            tuple[int | float, int | float]]
+
+        :param stroke: Value of the SVG ``stroke`` attribute. Defaults to ``"none"``.
+        :type stroke: str
+
+        :param fill: Value of the SVG ``fill`` attribute. Defaults to ``"none"``.
+        :type stroke: str
+
+        :param id_: Value of the SVG ``id`` attribute. If omitted, the attribute is
+            not provided.
+        :type id_: Optional[str]
+
+        :param attributes: Other attributes to be included in the element. Defaults to
+            ``dict()``.
+        :type attributes: Optional[Mapping[str, str]]
+
+        :returns: An SVG ``rect`` element.
+        :rtype: Element
+        """
         width = abs(corners[0][0] - corners[1][0])
         height = abs(corners[0][1] - corners[1][1])
         x = min(corners[0][0], corners[1][0])
@@ -166,8 +339,39 @@ class Element:
         background: Optional[str] = None,
         defs: Optional[str] = None,
         id_: Optional[str] = None,
-        attributes: Optional[dict[str, str]] = None,
+        attributes: Optional[Mapping[str, str]] = None,
     ) -> Element:
+        """
+        Make an inline SVG element for use in an HTML page.
+
+        :param width: The width of the SVG viewbox
+        :type width: int | float
+
+        :param height: The height of the SVG viewbox
+        :type height: int | float
+
+        :param interior: Elements that will be inside the SVG.
+        :type interior: Sequence[str | Element]
+
+        :param background: The  ``fill`` attribute of an SVG ``rect`` that occupies the
+            entire Viewport but is underneath the other elements. Defaults to ``None``.
+            If ``None``, no such ``rect`` is constructed.
+        :type background: Optional[str]
+
+        :param defs: Any text to be passed along as the ``def`` attribute.
+        :type defs: Optional[str]
+
+        :param id_: Value of the HTML ``id`` attribute. If omitted, the attribute is
+            not provided.
+        :type id_: Optional[str]
+
+        :param attributes: Other attributes to be included in the element. Defaults to
+            ``dict()``.
+        :type attributes: Optional[Mapping[str, str]]
+
+        :returns: An inline ``svg`` element.
+        :rtype: Element
+        """
         basic_attribs = {
             "viewBox": f"0 0 {width} {height}",
             "xmlns": "http://www.w3.org/2000/svg",
