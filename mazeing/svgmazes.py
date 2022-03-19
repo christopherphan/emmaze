@@ -511,7 +511,7 @@ if __name__ == "__main__":
     """
     docstring = "<!doctype html>"
     style_elt = svgfunctions.Element("style", interior=[style_info])
-    title = svgfunctions.Element("title", interior="MAZE!", seperate_interior=False)
+    title = svgfunctions.Element("title", interior="MAZE!", separate_interior=False)
     head = svgfunctions.Element("head", interior=[title, style_elt])
     pic = svgfunctions.Element(
         "div", interior=[svg_data.SVG], attributes={"class": "pic"}
