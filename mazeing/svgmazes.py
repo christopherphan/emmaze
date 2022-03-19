@@ -7,12 +7,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from math import ceil
 from numbers import Real
-from typing import Final, Literal, NamedTuple, Optional
+from typing import Final, Literal, NamedTuple, Optional, TypeAlias
 
-import mazeing._svgfunctions as svgfunctions
 import mazeing.maze as mz
+import mazeing.svgfunctions as svgfunctions
 
-WALL_THICKNESS_SETTING = Literal["cellsize", "absolute"]
+WALL_THICKNESS_SETTING: TypeAlias = Literal["cellsize", "absolute"]
 
 NEXT_DIRECTION: Final[dict[mz.DIRECTION_TYPE, mz.DIRECTION_TYPE]] = {
     direction: mz.DIRECTIONS[(idx + 1) % 4]
@@ -261,7 +261,7 @@ THICKNESS_OFFSET_POS: Final[dict[mz.DIAG_DIRECTION_TYPE, mz.Position]] = {
     for diag_dir, cp in CORNER_POS.items()
 }
 
-CornerPair = tuple[mz.DIAG_DIRECTION_TYPE, mz.DIAG_DIRECTION_TYPE]
+CornerPair: TypeAlias = tuple[mz.DIAG_DIRECTION_TYPE, mz.DIAG_DIRECTION_TYPE]
 
 WALL_CORNERS: Final[dict[mz.DIRECTION_TYPE, CornerPair]] = {
     ns: (

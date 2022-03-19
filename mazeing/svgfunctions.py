@@ -11,14 +11,14 @@ class Element:
     """
     Represents an HTML/XML element.
 
-    :param name: The name of the element
+    :param name: The name of the element (e.g. ``p`` or ``div``).
     :type name: str
 
     :param attributes: The attributes of the element. Defaults to ``dict()``.
-    :type attributes: Optional[Mapping[str, str]]
+    :type attributes: Mapping[str, str]
 
     :param interior: The contents of the element. Defaults to ``[]``.
-    :type interior: Optional[Sequence[str | Element]]
+    :type interior: Sequence[str | Element]
 
     :param self_closing: When set to ``True``, the element will be self closing
         (e.g. ``<br />``). Defaults to ``False``.
@@ -27,7 +27,6 @@ class Element:
     :param separate_interior: When set to ``True``, place the interior on separate lines
         in the output. Defaults to ``True``.
     :type separate_interior: bool
-    `
     """
 
     def __init__(
@@ -242,7 +241,7 @@ class Element:
         ],
         stroke: str = "black",
         id_: Optional[str] = None,
-        attributes: Mapping[dict[str, str]] = None,
+        attributes: Optional[Mapping[str, str]] = None,
     ) -> Element:
         """
         Make an SVG ``line`` element.
@@ -287,7 +286,7 @@ class Element:
         stroke: str = "none",
         fill: str = "none",
         id_: Optional[str] = None,
-        attributes: Mapping[dict[str, str]] = None,
+        attributes: Optional[Mapping[str, str]] = None,
     ) -> Element:
         """
         Make an SVG ``rect`` element.
