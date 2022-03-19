@@ -12,6 +12,9 @@ API Reference
 
 .. automodule:: mazeing.maze
 
+TypeAliases
+-----------
+
 .. py:data:: DIRECTION_TYPE
 
    The four main cardinal directions.
@@ -26,13 +29,13 @@ API Reference
    :type: TypeAlias
    :value: tuple[DIRECTION_TYPE, DIRECTION_TYPE]
 
-.. autoclass:: AdjacencyInfo
+Classes
+-------
+
+.. autoclass:: DirectionInfo
    :members:
 
 .. autoclass:: Maze
-   :members:
-
-.. autoclass:: MazeCell
    :members:
 
 .. autoclass:: MazeConstructor
@@ -47,7 +50,7 @@ API Reference
 .. autoclass:: Position
    :members:
 
-.. autoclass:: WallInfo
+.. autoclass:: WallLine
    :members:
 
 .. autofunction:: make_maze
