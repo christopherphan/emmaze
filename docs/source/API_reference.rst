@@ -53,4 +53,7 @@ Classes
 .. autoclass:: WallLine
    :members:
 
+Functions
+---------
+
 .. autofunction:: make_maze

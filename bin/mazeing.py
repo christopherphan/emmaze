@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import maze as mz
+import mazeing.maze as mz
 
 
 def main():

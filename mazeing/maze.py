@@ -13,7 +13,7 @@ T = TypeVar("T")
 DIRECTION_TYPE: TypeAlias = Literal["north", "south", "east", "west"]
 NS_DIRECTIONS: Final[list[DIRECTION_TYPE]] = ["north", "south"]
 EW_DIRECTIONS: Final[list[DIRECTION_TYPE]] = ["east", "west"]
-DIRECTIONS: Final[list[DIRECTION_TYPE]] = ["north", "south", "east", "west"]
+DIRECTIONS: Final[list[DIRECTION_TYPE]] = ["north", "west", "south", "east"]
 DIAG_DIRECTION_TYPE = tuple[DIRECTION_TYPE, DIRECTION_TYPE]
 DIAG_DIRECTIONS: Final[list[DIAG_DIRECTION_TYPE]] = [
     (ns, ew) for ns in NS_DIRECTIONS for ew in EW_DIRECTIONS
@@ -142,14 +142,14 @@ class DirectionInfo(Generic[T]):
 
     @classmethod
     def from_mapping(
-        cls: type[DirectionInfo], mapping: Mapping[DIRECTION_TYPE, T]
+        cls: type[DirectionInfo], mapping: Mapping[DIRECTION_TYPE, T], default: T
     ) -> DirectionInfo[T]:
         """Construct an object from a mapping."""
         return DirectionInfo(
-            north=mapping["north"],
-            south=mapping["south"],
-            east=mapping["east"],
-            west=mapping["west"],
+            north=mapping["north"] if "north" in mapping else default,
+            south=mapping["south"] if "south" in mapping else default,
+            east=mapping["east"] if "east" in mapping else default,
+            west=mapping["west"] if "west" in mapping else default,
         )
 
     def with_value(self: DirectionInfo, value: T) -> set[DIRECTION_TYPE]:
@@ -386,11 +386,24 @@ class Maze:
         """Return information about the walls of the cell at position."""
         return DirectionInfo.from_mapping(
             {
-                direction: self.retrieve_wall(
-                    *position.convert_wall_coordinates(direction)
-                )
+                direction: self.retrieve_wall(*info)
                 for direction in DIRECTIONS
-            }
+                if (  # Check that wall has valid coordinates
+                    (info := position.convert_wall_coordinates(direction))[1] >= 0
+                    and (
+                        info[1] < self.rows
+                        or (info[1] == self.rows and info[0] == "EW")
+                    )
+                    and (
+                        info[2] >= 0
+                        and (
+                            info[2] < self.cols
+                            or (info[2] == self.cols and info[0] == "NS")
+                        )
+                    )
+                )
+            },
+            False,
         )
 
     def __repr__(self: Maze) -> str:
@@ -570,7 +583,8 @@ class MazeWorker:
                     )
                     and nb not in self.maze_constructor.visited
                     for direction in DIRECTIONS
-                }
+                },
+                False,
             )
 
     def remove_wall(self: MazeWorker, direction: DIRECTION_TYPE) -> None:
