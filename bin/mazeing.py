@@ -131,7 +131,7 @@ if __name__ == "__main__":
         ]
 
         maze = mz.make_maze(
-            args["rows"], args["cols"], maze_exits, spawn_probability=0.05
+            args["rows"], args["cols"], maze_exits, spawn_probability=0.1
         )
         maze_text: str = ""
 
