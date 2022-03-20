@@ -12,8 +12,8 @@ API Reference
 
 .. automodule:: mazeing.maze
 
-TypeAliases
------------
+Type aliases
+------------
 
 .. py:data:: DIRECTION_TYPE
 
@@ -53,4 +53,69 @@ Classes
 .. autoclass:: WallLine
    :members:
 
+Functions
+---------
+
 .. autofunction:: make_maze
+
+
+``svgfunctions``: Helper for making HTML/XML/SVG documents
+==========================================================
+
+.. automodule:: mazeing.svgfunctions
+
+Class
+-----
+
+.. autoclass:: Element
+   :members:
+
+``svgmazes``: Functionality to output mazes to SVG
+==================================================
+
+.. automodule:: mazeing.svgmazes
+
+Type aliases
+------------
+
+.. py:data:: CornerPair
+
+   :type: TypeAlias
+   :value: tuple[maze.DIAG_DIRECTION_TYPE, maze.DIAG_DIRECTION_TYPE]
+
+.. py:data:: WALL_THICKNESS_SETTING
+
+   Used as a keyword for wall sizing.
+
+   :type: TypeAlias
+   :value: Literal["cellsize", "absolute"]
+
+Module constants
+----------------
+
+.. py:data:: COORD_ZERO
+
+    :type: Final[GraphicalCoordinates]
+    :value: GraphicalCoordinates(0, 0)
+
+Classes
+-------
+    
+.. autoclass:: GraphicalCoordinates
+   :members:
+
+.. autoclass:: GraphicalPath
+   :members:
+
+.. autoclass:: OrientedLineSegment
+   :members:
+
+.. autoclass:: WallFace
+   :members:
+
+.. autoclass:: WallFollowerSVGData
+   :members:
+
+.. autoclass:: WallTracker
+   :members:
+

@@ -7,32 +7,21 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from math import ceil
 from numbers import Real
-from typing import Final, Literal, NamedTuple, Optional
+from typing import Final, Literal, NamedTuple, Optional, TypeAlias
 
-import maze as mz
-import _svgfunctions as svgfunctions
+import mazeing.maze as mz
+import mazeing.svgfunctions as svgfunctions
 
-WALL_THICKNESS_SETTING = Literal["cellsize", "absolute"]
+WALL_THICKNESS_SETTING: TypeAlias = Literal["cellsize", "absolute"]
 
 NEXT_DIRECTION: Final[dict[mz.DIRECTION_TYPE, mz.DIRECTION_TYPE]] = {
-    "north": "west",
-    "west": "south",
-    "south": "east",
-    "east": "north",
-}
-
-POSITION_ADJUST: Final[dict[mz.DIRECTION_TYPE, mz.Position]] = {
-    "north": mz.Position(-1, 0),
-    "south": mz.Position(1, 0),
-    "east": mz.Position(0, 1),
-    "west": mz.Position(0, -1),
+    direction: mz.DIRECTIONS[(idx + 1) % 4]
+    for idx, direction in enumerate(mz.DIRECTIONS)
 }
 
 OPPOSITE: Final[dict[mz.DIRECTION_TYPE, mz.DIRECTION_TYPE]] = {
-    "north": "south",
-    "south": "north",
-    "west": "east",
-    "east": "west",
+    direction: mz.DIRECTIONS[(idx + 2) % 4]
+    for idx, direction in enumerate(mz.DIRECTIONS)
 }
 
 DIAG_OPPOSITE: Final[dict[mz.DIAG_DIRECTION_TYPE, mz.DIAG_DIRECTION_TYPE]] = {
@@ -261,32 +250,6 @@ class GraphicalPath(Sequence):
         return len(self._coords)
 
 
-@dataclass(frozen=True)
-class ExtendedDirection:
-    """Class to represent information about direction and being exterior/interior."""
-
-    direction: mz.DIRECTION_TYPE
-    exterior: bool = False
-
-
-ALL_EXTENDED_DIRS: Final[list[ExtendedDirection]] = [
-    ExtendedDirection(direction, truth_val)
-    for direction in mz.DIRECTIONS
-    for truth_val in (True, False)
-]
-
-NEXT_EXTENED_DIRS: Final[dict[ExtendedDirection, ExtendedDirection]] = {
-    ExtendedDirection(direction, False): ExtendedDirection(
-        NEXT_DIRECTION[direction], False
-    )
-    for direction in mz.DIRECTIONS
-} | {
-    ExtendedDirection(direction, True): ExtendedDirection(
-        OPPOSITE[NEXT_DIRECTION[direction]], True
-    )
-    for direction in mz.DIRECTIONS
-}
-
 CORNER_POS: Final[dict[mz.DIAG_DIRECTION_TYPE, mz.Position]] = {
     (ns, ew): mz.Position(0 if ns == "north" else 1, 1 if ew == "east" else 0)
     for ns in mz.NS_DIRECTIONS
@@ -298,176 +261,53 @@ THICKNESS_OFFSET_POS: Final[dict[mz.DIAG_DIRECTION_TYPE, mz.Position]] = {
     for diag_dir, cp in CORNER_POS.items()
 }
 
-CornerPair = tuple[mz.DIAG_DIRECTION_TYPE, mz.DIAG_DIRECTION_TYPE]
+CornerPair: TypeAlias = tuple[mz.DIAG_DIRECTION_TYPE, mz.DIAG_DIRECTION_TYPE]
 
-WALL_CORNERS: Final[dict[ExtendedDirection, CornerPair]] = (
-    {
-        ExtendedDirection(ns, False): (
-            (ns, OPPOSITE[NEXT_DIRECTION[ns]]),
-            (ns, NEXT_DIRECTION[ns]),
-        )
-        for ns in mz.NS_DIRECTIONS
-    }
-    | {
-        ExtendedDirection(ew, False): (
-            (OPPOSITE[NEXT_DIRECTION[ew]], ew),
-            (NEXT_DIRECTION[ew], ew),
-        )
-        for ew in mz.EW_DIRECTIONS
-    }
-    | {
-        ExtendedDirection(ns, True): (
-            (ns, NEXT_DIRECTION[ns]),
-            (ns, OPPOSITE[NEXT_DIRECTION[ns]]),
-        )
-        for ns in mz.NS_DIRECTIONS
-    }
-    | {
-        ExtendedDirection(ew, True): (
-            (NEXT_DIRECTION[ew], ew),
-            (OPPOSITE[NEXT_DIRECTION[ew]], ew),
-        )
-        for ew in mz.EW_DIRECTIONS
-    }
-)
-
-
-@dataclass(frozen=True)
-class PositionDirection:
-    """Class to represent a position and direction."""
-
-    position: mz.Position
-    direction: mz.DIRECTION_TYPE
-
-    def to_position_extended_direction(
-        self: PositionDirection, maze: mz.Maze
-    ) -> tuple[mz.Position, ExtendedDirection]:
-        """Return the position and extended direction associated with this object."""
-        row = self.position.row
-        col = self.position.column
-        if (0 <= row and row < maze.rows) and (0 <= col and col < maze.cols):
-            position = self.position
-            ext_dir = ExtendedDirection(self.direction, False)
-        elif (
-            (row == -1 or row == maze.rows)
-            and (0 <= col and col < maze.cols)
-            and self.direction in mz.NS_DIRECTIONS
-        ) or (
-            (col == -1 or col == maze.cols)
-            and (0 <= row and row < maze.rows)
-            and self.direction in mz.EW_DIRECTIONS
-        ):
-            ext_dir = ExtendedDirection(OPPOSITE[self.direction], True)
-            position = self.position + POSITION_ADJUST[self.direction]
-        else:
-            raise ValueError("Invalid PositionDirection.")
-        return position, ext_dir
-
-    def next_four(self: PositionDirection) -> list[PositionDirection]:
-        """Return the four directions for the possible next wall."""
-        directions = [
-            NEXT_DIRECTION[self.direction],
-            self.direction,
-            OPPOSITE[NEXT_DIRECTION[self.direction]],
-            OPPOSITE[self.direction],
-        ]
-        positions = [
-            self.position,
-            self.position + POSITION_ADJUST[directions[0]],
-            self.position
-            + POSITION_ADJUST[directions[0]]
-            + POSITION_ADJUST[self.direction],
-            self.position + POSITION_ADJUST[self.direction],
-        ]
-        return [
-            PositionDirection(position, direction)
-            for position, direction in zip(positions, directions)
-        ]
-
-    def next_four_position_extended_direction(
-        self: PositionDirection, maze: mz.Maze
-    ) -> list[tuple[mz.Position, ExtendedDirection]]:
-        """Return the positions and extended directions for the possible next wall."""
-        outval: list[tuple[mz.Position, ExtendedDirection]] = []
-        for pd in self.next_four():
-            try:
-                outval.append(pd.to_position_extended_direction(maze))
-            except ValueError:
-                pass
-        return outval
+WALL_CORNERS: Final[dict[mz.DIRECTION_TYPE, CornerPair]] = {
+    ns: (
+        (ns, OPPOSITE[NEXT_DIRECTION[ns]]),
+        (ns, NEXT_DIRECTION[ns]),
+    )
+    for ns in mz.NS_DIRECTIONS
+} | {
+    ew: (
+        (OPPOSITE[NEXT_DIRECTION[ew]], ew),
+        (NEXT_DIRECTION[ew], ew),
+    )
+    for ew in mz.EW_DIRECTIONS
+}
 
 
 @dataclass(frozen=True)
 class WallFace:
     """Class to represent a face of a wall."""
 
-    cell: mz.MazeCell
-    ext_dir: ExtendedDirection
-
-    def to_PositionDirection(self: WallFace) -> PositionDirection:
-        """Treat exterior walls as the interior walls of a virtual cell."""
-        if self.cell.position is None:
-            raise ValueError("Cell does not have a position.")
-        if self.ext_dir.exterior:
-            return PositionDirection(
-                self.cell.position + POSITION_ADJUST[self.ext_dir.direction],
-                OPPOSITE[self.ext_dir.direction],
-            )
-        return PositionDirection(self.cell.position, self.ext_dir.direction)
-
-    @classmethod
-    def from_PositionDirection(
-        cls: type[WallFace], position_direction: PositionDirection, maze: mz.Maze
-    ) -> WallFace:
-        """Return a cell and ExtendedDirection based on a ``PositionDirection`` object."""
-        ped = position_direction.to_position_extended_direction(maze)
-        return WallFace(ped[0], ped[1])
-
-    @staticmethod
-    def _test_for_exit(cell: mz.MazeCell, direction: mz.DIRECTION_TYPE) -> bool:
-        """Return ``True`` if there is an exit in that direction."""
-        if cell.maze is None or cell.position is None:
-            raise ValueError("Cell must be in a maze.")
-        if cell.adjacent[direction]:
-            return False
-        return any(
-            ext.wall == direction
-            and (
-                (
-                    direction in ["north", "south"]
-                    and ext.location == cell.position.column
-                )
-                or (direction in ["east", "west"] and ext.location == cell.position.row)
-            )
-            for ext in cell.maze.exits
-        )
+    maze: mz.Maze
+    cell: mz.Position
+    direction: mz.DIRECTION_TYPE
 
     @classmethod
     def from_cell(
-        cls: type[WallFace], cell: mz.MazeCell
-    ) -> dict[ExtendedDirection, WallFace]:
-        """Return a list of walls from the cell."""
-        return {
-            (ed := ExtendedDirection(direction, False)): cls(cell, ed)
-            for direction in mz.DIRECTIONS
-            if cell.walls[direction] and not cls._test_for_exit(cell, direction)
-        } | {
-            (ed := ExtendedDirection(direction, True)): cls(cell, ed)
-            for direction in mz.DIRECTIONS
-            if cell.adjacent[direction] is None
-            and not cls._test_for_exit(cell, direction)
-        }
+        cls: type[WallFace], maze: mz.Maze, cell: mz.Position
+    ) -> mz.DirectionInfo[Optional[WallFace]]:
+        """Return the walls from a cell position."""
+        return mz.DirectionInfo.from_mapping(
+            {
+                direction: WallFace(maze, cell, direction)
+                for direction in maze.cell_walls(cell).with_value(True)
+            },
+            None,
+        )
 
     @classmethod
     def all_walls(
         cls: type[WallFace], maze: mz.Maze
-    ) -> dict[mz.Position, dict[ExtendedDirection, WallFace]]:
+    ) -> dict[mz.Position, mz.DirectionInfo[Optional[WallFace]]]:
         """Return a dictionary of all walls."""
         return {
-            mz.Position(row_idx, col_idx): WallFace.from_cell(cell)
-            for row_idx, row in enumerate(maze.cells)
-            for col_idx, cell in enumerate(row)
-            if cell is not None
+            (pos := mz.Position(row, col)): WallFace.from_cell(maze, pos)
+            for row in range(-1, maze.rows + 1)
+            for col in range(-1, maze.cols + 1)
         }
 
 
@@ -477,33 +317,30 @@ class WallTracker:
     def __init__(self: WallTracker, maze: mz.Maze):
         """Initialize object."""
         self.wall_dict = WallFace.all_walls(maze)
-        self.track: dict[mz.Position, dict[ExtendedDirection, bool]] = {
-            position: {ed: (ed in self.wall_dict[position]) for ed in ALL_EXTENDED_DIRS}
-            for position in self.wall_dict
+        self.track: dict[mz.Position, mz.DirectionInfo[bool]] = {
+            position: maze.cell_walls(position) for position in self.wall_dict
         }
         self.maze = maze
 
     @property
     def number_remaining_walls(self: WallTracker) -> int:
         """Return the number of ``True`` walls."""
-        return sum(
-            sum(1 if self.track[position][ed] else 0 for ed in ALL_EXTENDED_DIRS)
-            for position in self.wall_dict
-        )
+        return sum(self.track[position].number for position in self.track)
 
     def _get_cell_with_wall(self: WallTracker) -> mz.Position:
         """Find a cell whose walls haven't all been toggled off."""
         for position, data in self.track.items():
-            if any(data.values()):
+            if data.any:
                 return position
         raise ValueError("No cells with walls.")
 
     def _basic_get_wall(self: WallTracker) -> WallFace:
         """Return a wall that hasn't been toggled off."""
         position = self._get_cell_with_wall()
-        for direction in ALL_EXTENDED_DIRS:
+        for direction in mz.DIRECTIONS:
             if self.track[position][direction]:
-                return self.wall_dict[position][direction]
+                assert (w := self.wall_dict[position][direction])
+                return w
         raise ValueError("No walls left.")
 
     def get_wall(self: WallTracker) -> Optional[WallFace]:
@@ -515,32 +352,56 @@ class WallTracker:
 
     def next_wall(self: WallTracker, wall: WallFace) -> WallFace:
         """Return the next wall."""
-        if wall.cell.maze is None:
-            raise ValueError("Cell maze is not set.")
-        if (position := wall.cell.position) is None:
-            raise ValueError("Wall has no position.")
-        possible_next_walls = (
-            wall.to_PositionDirection().next_four_position_extended_direction(self.maze)
-        )
-        for position, ext_dir in possible_next_walls:
-            if position in self.wall_dict and ext_dir in self.wall_dict[position]:
-                return self.wall_dict[position][ext_dir]
+        # If we rotate the maze mentally so that the wall face we are on points to
+        # 12-o'clock, then the potential next walls are pointing at 9-, 12-, 3-, and
+        # 6-o'clock.
+        #
+        #       (c)
+        #
+        #        ^ ::
+        #        | ::
+        #        | ::
+        #          :: ---> (d)
+        #    ::::::::::::
+        # (b) <--- ##
+        #       (a)## |
+        #        ^ ## |
+        #        $ ## V
+        #        $ ##(e)
+        #
+        # (a) is the current wall.
+
+        possible_next_walls: list[tuple[mz.Position, mz.DIRECTION_TYPE]] = [
+            (wall.cell, NEXT_DIRECTION[wall.direction]),  # (b)
+            (wall.cell.neighbor[NEXT_DIRECTION[wall.direction]], wall.direction),  # (c)
+            (
+                wall.cell.neighbor[NEXT_DIRECTION[wall.direction]].neighbor[
+                    wall.direction
+                ],
+                OPPOSITE[NEXT_DIRECTION[wall.direction]],
+            ),  # (d)
+            (wall.cell.neighbor[wall.direction], OPPOSITE[wall.direction]),  # (e)
+        ]
+        for position, direction in possible_next_walls:
+            if (
+                position in self.wall_dict
+                and self.wall_dict[position][direction] is not None
+            ):
+                return self.wall_dict[position][direction]  # type: ignore
         raise ValueError("No next wall found.")
 
     def mark_wall(self: WallTracker, wall: WallFace):
         """Mark wall off the track."""
         if wall.cell is None:
             raise ValueError(f"{wall} is not in a cell.")
-        if wall.cell.position is None:
-            raise ValueError(f"{wall.cell} has no position.")
-        self.track[wall.cell.position][wall.ext_dir] = False
+        self.track[wall.cell][wall.direction] = False
 
 
-class SVGData:
+class WallFollowerSVGData:
     """Make SVGs of the maze."""
 
     def __init__(
-        self: SVGData,
+        self: WallFollowerSVGData,
         maze: mz.Maze,
         width: float,
         height: float,
@@ -575,22 +436,18 @@ class SVGData:
             self.wall_thickness, self.wall_thickness
         )
 
-    def cell_coordinates(self: SVGData, position: mz.Position) -> GraphicalCoordinates:
+    def cell_coordinates(
+        self: WallFollowerSVGData, position: mz.Position
+    ) -> GraphicalCoordinates:
         """Return the upper-left corner of the cell."""
         return self.offset + position * self.cell_dimension
 
     def wall_coordinates_from_position(
-        self: SVGData, position: mz.Position, ext_dir: ExtendedDirection
+        self: WallFollowerSVGData, position: mz.Position, direction: mz.DIRECTION_TYPE
     ) -> OrientedLineSegment:
         """Return coordinates for a wall given position and direction."""
-        if ext_dir.exterior:
-            return self.wall_coordinates_from_position(
-                position + POSITION_ADJUST[ext_dir.direction],
-                ExtendedDirection(OPPOSITE[ext_dir.direction], False),
-            )
-
         top_left = self.cell_coordinates(position)
-        corners = WALL_CORNERS[ext_dir]
+        corners = WALL_CORNERS[direction]
         corner_positions = (CORNER_POS[corners[0]], CORNER_POS[corners[1]])
         return OrientedLineSegment(
             top_left
@@ -601,14 +458,14 @@ class SVGData:
             + THICKNESS_OFFSET_POS[corners[1]] * self._wall_thickness_gc,
         )
 
-    def wall_coordinates(self: SVGData, wall: WallFace) -> OrientedLineSegment:
+    def wall_coordinates(
+        self: WallFollowerSVGData, wall: WallFace
+    ) -> OrientedLineSegment:
         """Return coordinates for the wall."""
-        if wall.cell.position is None:
-            raise ValueError("Cell position is not defined.")
-        return self.wall_coordinates_from_position(wall.cell.position, wall.ext_dir)
+        return self.wall_coordinates_from_position(wall.cell, wall.direction)
 
     @property
-    def graphical_path_components(self: SVGData) -> list[GraphicalPath]:
+    def graphical_path_components(self: WallFollowerSVGData) -> list[GraphicalPath]:
         """Make ``GraphicalPath`` objects for the wall components."""
         return [
             GraphicalPath.from_OLS_seq([self.wall_coordinates(wall) for wall in cmpt])
@@ -616,51 +473,17 @@ class SVGData:
         ]
 
     @property
-    def walls_SVG(self: SVGData) -> svgfunctions.Element:
+    def walls_SVG(self: WallFollowerSVGData) -> svgfunctions.Element:
         """Return a SVG group of the wall components."""
         return svgfunctions.Element.make_svg_group(
             [gp.svg_polygon for gp in self.graphical_path_components]
         )
 
     @property
-    def SVG(self: SVGData) -> svgfunctions.Element:
+    def SVG(self: WallFollowerSVGData) -> svgfunctions.Element:
         """Return the SVG of the maze."""
         return svgfunctions.Element.make_inline_svg(
             self.width + 2 * self.offset.x,
             self.height + 2 * self.offset.y,
             [self.walls_SVG],
         )
-
-
-if __name__ == "__main__":
-    maze = mz.make_maze(
-        100,
-        70,
-        (mz.MazeExit("north", 50), mz.MazeExit("east", 50)),
-        mz.Position(50, 50),
-        0.05,
-    )
-    svg_data = SVGData(maze, 700, 1000, GraphicalCoordinates(50, 50))
-    # HTML file
-    style_info = """
-          body {
-            background-color: white;
-          }
-
-          div.pic {
-            width: 95vw;
-            margin: 2vw;
-          }
-    """
-    docstring = "<!doctype html>"
-    style_elt = svgfunctions.Element("style", interior=[style_info])
-    title = svgfunctions.Element("title", interior="MAZE!", seperate_interior=False)
-    head = svgfunctions.Element("head", interior=[title, style_elt])
-    pic = svgfunctions.Element(
-        "div", interior=[svg_data.SVG], attributes={"class": "pic"}
-    )
-    body = svgfunctions.Element("body", interior=[pic])
-    html = svgfunctions.Element("html", interior=[head, body])
-
-    with open("maze_output.html", "wt") as outfile:
-        outfile.write(docstring + "\n" + str(html))
