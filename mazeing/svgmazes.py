@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from math import ceil
+from math import ceil, fsum
 from numbers import Real
 from typing import Final, Literal, NamedTuple, Optional, TypeAlias
 
@@ -213,11 +213,25 @@ class GraphicalPath(Sequence):
         """Return ``hash(self)``."""
         return hash((tuple(self._coords), self.tolerance, self.__class__.__name__))
 
-    @property
-    def svg_polygon(self: GraphicalPath) -> svgfunctions.Element:
+    def svg_polygon(self: GraphicalPath, fill: str = "black") -> svgfunctions.Element:
         """Return an SVG polygon version of the path."""
         return svgfunctions.Element.make_svg_polygon(
-            [(pt.x, pt.y) for pt in self._coords], stroke="none", fill="black"
+            [(pt.x, pt.y) for pt in self._coords], stroke="none", fill=fill
+        )
+
+    @property
+    def polygon_signed_area(self: GraphicalPath) -> float:
+        """Return the signed area of the polygon."""
+        # Shoelace formula for signed area
+        # Note that we negate the traditional formula because our y-axis
+        # is inverted compared with the traditional cartesean y-axis
+        return 0.5 * (
+            fsum(
+                a.y * b.x - a.x * b.y
+                for a, b in zip(self._coords[:-1], self._coords[1:])
+            )
+            + self._coords[-1].y * self._coords[0].x
+            - self._coords[-1].x * self._coords[0].y
         )
 
     def svg_list(self: GraphicalPath, prec: Optional[int] = None) -> str:
@@ -475,9 +489,14 @@ class WallFollowerSVGData:
     @property
     def walls_SVG(self: WallFollowerSVGData) -> svgfunctions.Element:
         """Return a SVG group of the wall components."""
-        return svgfunctions.Element.make_svg_group(
-            [gp.svg_polygon for gp in self.graphical_path_components]
-        )
+        svg_elts = [
+            (
+                (psa := gp.polygon_signed_area),
+                gp.svg_polygon("white" if psa >= 0 else "black"),
+            )
+            for gp in self.graphical_path_components
+        ]
+        return svgfunctions.Element.make_svg_group([k[1] for k in sorted(svg_elts)])
 
     @property
     def SVG(self: WallFollowerSVGData) -> svgfunctions.Element:
