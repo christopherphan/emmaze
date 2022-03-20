@@ -487,37 +487,3 @@ class WallFollowerSVGData:
             self.height + 2 * self.offset.y,
             [self.walls_SVG],
         )
-
-
-if __name__ == "__main__":
-    maze = mz.make_maze(
-        100,
-        70,
-        (mz.MazeExit("north", 50), mz.MazeExit("east", 50)),
-        mz.Position(50, 50),
-        0.05,
-    )
-    svg_data = WallFollowerSVGData(maze, 700, 1000, GraphicalCoordinates(50, 50))
-    # HTML file
-    style_info = """
-          body {
-            background-color: white;
-          }
-
-          div.pic {
-            width: 95vw;
-            margin: 2vw;
-          }
-    """
-    docstring = "<!doctype html>"
-    style_elt = svgfunctions.Element("style", interior=[style_info])
-    title = svgfunctions.Element("title", interior="MAZE!", separate_interior=False)
-    head = svgfunctions.Element("head", interior=[title, style_elt])
-    pic = svgfunctions.Element(
-        "div", interior=[svg_data.SVG], attributes={"class": "pic"}
-    )
-    body = svgfunctions.Element("body", interior=[pic])
-    html = svgfunctions.Element("html", interior=[head, body])
-
-    with open("maze_output.html", "wt") as outfile:
-        outfile.write(docstring + "\n" + str(html))

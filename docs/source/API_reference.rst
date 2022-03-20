@@ -70,8 +70,8 @@ Class
 .. autoclass:: Element
    :members:
 
-``svgmazes``: Functionality to output to SVG
-============================================
+``svgmazes``: Functionality to output mazes to SVG
+==================================================
 
 .. automodule:: mazeing.svgmazes
 

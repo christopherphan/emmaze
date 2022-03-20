@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Classes for generating and displaying random mazes."""
 
 from __future__ import annotations
@@ -430,7 +429,7 @@ class Maze:
             return self.retrieve_wall("EW", y // 2, x // 2)
         return False
 
-    def ascii_version(self: Maze, wall_chr: str = "#") -> str:
+    def str_version(self: Maze, wall_chr: str = "#") -> str:
         """
         Return ASCII art version of the maze.
 
@@ -451,7 +450,7 @@ class Maze:
 
     def __str__(self: Maze) -> str:
         """Return ``str(self)``."""
-        return self.ascii_version()
+        return self.str_version()
 
 
 class MazeConstructor:
