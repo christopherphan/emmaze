@@ -40,7 +40,7 @@ class Element:
         """Initialize object."""
         self.name = name
         self.attributes = dict(attributes) if attributes else dict()
-        self.interior = interior if interior else []
+        self.interior = list(interior) if interior else []
         self.self_closing = self_closing
         self.separate_interior = separate_interior
 

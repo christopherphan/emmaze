@@ -219,6 +219,14 @@ class GraphicalPath(Sequence):
             [(pt.x, pt.y) for pt in self._coords], stroke="none", fill=fill
         )
 
+    def svg_polyline(
+        self: GraphicalPath, stroke: str = "black"
+    ) -> svgfunctions.Element:
+        """Return an SVG polyline version of the path."""
+        return svgfunctions.Element.make_svg_polyline(
+            [(pt.x, pt.y) for pt in self._coords], stroke=stroke
+        )
+
     @property
     def polygon_signed_area(self: GraphicalPath) -> float:
         """Return the signed area of the polygon."""
@@ -411,6 +419,37 @@ class WallTracker:
         self.track[wall.cell][wall.direction] = False
 
 
+class SVGInfo:
+    """Represents dimension information about an SVG object."""
+
+    def __init__(
+        self: SVGInfo,
+        width: float,
+        height: float,
+        rows: int,
+        cols: int,
+        offset: GraphicalCoordinates = COORD_ZERO,
+    ) -> None:
+        """Initialize object."""
+        self.width = width
+        self.height = height
+        self.offset = offset
+        self.rows = rows
+        self.cols = cols
+        self.cell_dimension = GraphicalCoordinates(
+            (width - 2 * offset.x) / cols,
+            (height - 2 * offset.y) / rows,
+        )
+
+    def cell_coordinates(self: SVGInfo, position: mz.Position) -> GraphicalCoordinates:
+        """Return the upper-left corner of the cell."""
+        return self.offset + position * self.cell_dimension
+
+    def cell_position(self: SVGInfo, position: mz.Position) -> GraphicalCoordinates:
+        """Find the coordinates of the middle of the cell."""
+        return self.cell_coordinates(position) + 0.5 * self.cell_dimension
+
+
 class WallFollowerSVGData:
     """Make SVGs of the maze."""
 
@@ -425,9 +464,7 @@ class WallFollowerSVGData:
     ) -> None:
         """Initialize the object."""
         self.maze = maze
-        self.width = width
-        self.height = height
-        self.offset = offset
+        self.svg_info = SVGInfo(width, height, maze.rows, maze.cols, offset)
         tracker = WallTracker(maze)
         wall_components: list[list[WallFace]] = []
         while (w := tracker.get_wall()) is not None:
@@ -438,37 +475,27 @@ class WallFollowerSVGData:
                 tracker.mark_wall(w)
             wall_components.append(current_component)
         self.wall_components = wall_components
-        self.cell_dimension = GraphicalCoordinates(
-            (width - 2 * offset.x) / self.maze.cols,
-            (height - 2 * offset.y) / self.maze.rows,
-        )
         if wall_thickness_units == "cellsize":
-            self.wall_thickness = wall_thickness * self.cell_dimension.min()
+            self.wall_thickness = wall_thickness * self.svg_info.cell_dimension.min()
         else:
             self.wall_thickness = wall_thickness
         self._wall_thickness_gc = GraphicalCoordinates(
             self.wall_thickness, self.wall_thickness
         )
 
-    def cell_coordinates(
-        self: WallFollowerSVGData, position: mz.Position
-    ) -> GraphicalCoordinates:
-        """Return the upper-left corner of the cell."""
-        return self.offset + position * self.cell_dimension
-
     def wall_coordinates_from_position(
         self: WallFollowerSVGData, position: mz.Position, direction: mz.DIRECTION_TYPE
     ) -> OrientedLineSegment:
         """Return coordinates for a wall given position and direction."""
-        top_left = self.cell_coordinates(position)
+        top_left = self.svg_info.cell_coordinates(position)
         corners = WALL_CORNERS[direction]
         corner_positions = (CORNER_POS[corners[0]], CORNER_POS[corners[1]])
         return OrientedLineSegment(
             top_left
-            + corner_positions[0] * self.cell_dimension
+            + corner_positions[0] * self.svg_info.cell_dimension
             + THICKNESS_OFFSET_POS[corners[0]] * self._wall_thickness_gc,
             top_left
-            + corner_positions[1] * self.cell_dimension
+            + corner_positions[1] * self.svg_info.cell_dimension
             + THICKNESS_OFFSET_POS[corners[1]] * self._wall_thickness_gc,
         )
 
@@ -502,7 +529,7 @@ class WallFollowerSVGData:
     def SVG(self: WallFollowerSVGData) -> svgfunctions.Element:
         """Return the SVG of the maze."""
         return svgfunctions.Element.make_inline_svg(
-            self.width + 2 * self.offset.x,
-            self.height + 2 * self.offset.y,
+            self.svg_info.width + 2 * self.svg_info.offset.x,
+            self.svg_info.height + 2 * self.svg_info.offset.y,
             [self.walls_SVG],
         )

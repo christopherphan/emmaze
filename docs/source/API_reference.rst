@@ -59,6 +59,18 @@ Functions
 .. autofunction:: make_maze
 
 
+``solutions``: Solve mazes and display solutions
+================================================
+
+.. automodule:: mazeing.solutions
+
+Class
+-----
+
+.. autoclass:: MazeSolver
+   :members:
+
+
 ``svgfunctions``: Helper for making HTML/XML/SVG documents
 ==========================================================
 
@@ -100,7 +112,7 @@ Module constants
 
 Classes
 -------
-    
+
 .. autoclass:: GraphicalCoordinates
    :members:
 
@@ -108,6 +120,9 @@ Classes
    :members:
 
 .. autoclass:: OrientedLineSegment
+   :members:
+
+.. autoclass:: SVGInfo
    :members:
 
 .. autoclass:: WallFace

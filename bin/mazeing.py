@@ -10,7 +10,16 @@ import mazeing.maze as mz
 import mazeing.svgfunctions as svgfunctions
 import mazeing.svgmazes as svgmazes
 
-COPYRIGHT: Final[
+__author__ = "Christopher L. Phan"
+__copyright__ = "Copyright \u00A9 2022, Christopher L. Phan"
+__license__ = "MIT"
+__version__ = "development 2022-03-20"
+__date__ = "2022-03-20"
+__maintainer__ = "Christopher L. Phan"
+__email__ = "cphan@chrisphan.com"
+
+
+LICENSE: Final[
     str
 ] = """
 MIT License
@@ -116,13 +125,21 @@ if __name__ == "__main__":
             type=int,
             help=f"place an exit on the {key} wall in {value} {value[0].upper()}",
         )
+
     parser.add_argument(
-        "--copyright", action="store_true", help="Display copyright message and exit"
+        "--copyright",
+        action="store_true",
+        help="Display copyright and license information, and then exit",
     )
+
+    parser.add_argument(
+        "--version", action="version", version=f"{parser.prog} version {__version__}"
+    )
+
     args = vars(parser.parse_args())
 
     if args["copyright"]:
-        print(COPYRIGHT)
+        print(LICENSE)
     else:
         maze_exits = [
             mz.MazeExit(direction, value)
