@@ -526,10 +526,26 @@ class WallFollowerSVGData:
         return svgfunctions.Element.make_svg_group([k[1] for k in sorted(svg_elts)])
 
     @property
-    def SVG(self: WallFollowerSVGData) -> svgfunctions.Element:
-        """Return the SVG of the maze."""
+    def SVG_inline(self: WallFollowerSVGData) -> svgfunctions.Element:
+        """Return inline SVG of the maze."""
         return svgfunctions.Element.make_inline_svg(
             self.svg_info.width + 2 * self.svg_info.offset.x,
             self.svg_info.height + 2 * self.svg_info.offset.y,
             [self.walls_SVG],
+        )
+
+    def SVG_standalone(
+        self: WallFollowerSVGData,
+        other_elts: Optional[Sequence[svgfunctions.Elements]] = None,
+    ) -> svgfunctions.ElementWithExtraText:
+        """Return standalonw SVG of the maze."""
+        add_elts: list[svgfunctions.Elements]
+        if other_elts is None:
+            add_elts = []
+        else:
+            add_elts = list(other_elts)
+        return svgfunctions.Element.make_standalone_svg(
+            self.svg_info.width + 2 * self.svg_info.offset.x,
+            self.svg_info.height + 2 * self.svg_info.offset.y,
+            [self.walls_SVG] + add_elts,
         )

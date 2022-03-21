@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from textwrap import indent
 from typing import Literal, Optional
 
@@ -330,6 +331,39 @@ class Element:
         return cls("rect", attributes=attribs, self_closing=True)
 
     @classmethod
+    def _make_svg(
+        cls: type[Element],
+        width: int | float,
+        height: int | float,
+        interior: Sequence[str | Element],
+        background: Optional[str] = None,
+        defs: Optional[str] = None,
+        id_: Optional[str] = None,
+        attributes: Optional[Mapping[str, str]] = None,
+        namespace: bool = False,
+    ) -> Element:
+        """Make SVG element."""
+        basic_attribs = {
+            "viewBox": f"0 0 {width} {height}",
+        }
+        if namespace:
+            basic_attribs["xmlns"] = "http://www.w3.org/2000/svg"
+        if id_:
+            basic_attribs["id"] = id_
+        attribs = basic_attribs | attributes if attributes else basic_attribs
+        def_list: list[str | Element] = (
+            [Element("defs", interior=[defs])] if defs else []
+        )
+        back_list: list[str | Element] = (
+            [cls.make_svg_rect(((0, 0), (width, height)), fill=background)]
+            if background
+            else []
+        )
+        full_interior = def_list + back_list + list(interior)
+
+        return cls(name="svg", attributes=attribs, interior=full_interior)
+
+    @classmethod
     def make_inline_svg(
         cls: type[Element],
         width: int | float,
@@ -371,21 +405,100 @@ class Element:
         :returns: An inline ``svg`` element.
         :rtype: Element
         """
-        basic_attribs = {
-            "viewBox": f"0 0 {width} {height}",
-            "xmlns": "http://www.w3.org/2000/svg",
-        }
-        if id_:
-            basic_attribs["id"] = id_
-        attribs = basic_attribs | attributes if attributes else basic_attribs
-        def_list: list[str | Element] = (
-            [Element("defs", interior=[defs])] if defs else []
-        )
-        back_list: list[str | Element] = (
-            [cls.make_svg_rect(((0, 0), (width, height)), fill=background)]
-            if background
-            else []
-        )
-        full_interior = def_list + back_list + list(interior)
+        return cls._make_svg(width, height, interior, background, defs, id_, attributes)
 
-        return cls(name="svg", attributes=attribs, interior=full_interior)
+    @classmethod
+    def make_standalone_svg(
+        cls: type[Element],
+        width: int | float,
+        height: int | float,
+        interior: Sequence[str | Element],
+        background: Optional[str] = None,
+        defs: Optional[str] = None,
+        id_: Optional[str] = None,
+        attributes: Optional[Mapping[str, str]] = None,
+    ) -> ElementWithExtraText:
+        """
+        Make a standalone SVG element.
+
+        :param width: The width of the SVG viewbox
+        :type width: int | float
+
+        :param height: The height of the SVG viewbox
+        :type height: int | float
+
+        :param interior: Elements that will be inside the SVG.
+        :type interior: Sequence[str | Element]
+
+        :param background: The  ``fill`` attribute of an SVG ``rect`` that occupies the
+            entire Viewport but is underneath the other elements. Defaults to ``None``.
+            If ``None``, no such ``rect`` is constructed.
+        :type background: Optional[str]
+
+        :param defs: Any text to be passed along as the ``def`` attribute.
+        :type defs: Optional[str]
+
+        :param id_: Value of the HTML ``id`` attribute. If omitted, the attribute is
+            not provided.
+        :type id_: Optional[str]
+
+        :param attributes: Other attributes to be included in the element. Defaults to
+            ``dict()``.
+        :type attributes: Optional[Mapping[str, str]]
+
+        :returns: A standalone ``svg`` element.
+        :rtype: ElementWithExtraText
+        """
+        return ElementWithExtraText(
+            cls._make_svg(
+                width, height, interior, background, defs, id_, attributes, True
+            ),
+            "\n".join(
+                [
+                    '<?xml version="1.0" standalone="no"?>',
+                    '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"',
+                    '"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">',
+                ]
+            ),
+            "",
+        )
+
+
+@dataclass
+class ElementWithExtraText:
+    """Represents an element with some extra text around (e.g. ``DOCTYPE`` specifiers)."""
+
+    element: Element
+    before: str = ""
+    after: str = ""
+
+    def output(
+        self: ElementWithExtraText,
+        indentation: int = 0,
+        additional_indentation: int = 2,
+    ) -> str:
+        """
+        Return the output text.
+
+        :param indentation: The number of spaces to indent the element. Defaults
+            to 0.
+        :type indentation: int
+
+        :param additional_indentation: The number of spaces to indent elements in the
+            interior. Defaults to 2.
+        :type additional_indentation: int
+
+        :returns: The HTML/XML of the element.
+        :rtype: str
+        """
+        return "\n".join(
+            [
+                "\n".join(
+                    [" " * indentation + line for line in self.before.split("\n")]
+                ),
+                self.element.output(indentation, additional_indentation),
+                "\n".join(
+                    [" " * indentation + line for line in self.after.split("\n")]
+                ),
+            ]
+        )

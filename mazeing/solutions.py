@@ -31,7 +31,7 @@ class MazeSolver:
     @property
     def unvisited_neighbors(self: MazeSolver) -> mz.DirectionInfo[bool]:
         """Find the unvisited neighbors."""
-        cell_walls = self.current_position.cell_walls
+        cell_walls = self.maze.cell_walls(self.current_position)
         neighbors = self.current_position.neighbor
         return mz.DirectionInfo.from_mapping(
             {

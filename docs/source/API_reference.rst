@@ -82,6 +82,9 @@ Class
 .. autoclass:: Element
    :members:
 
+.. autoclass:: ElementWithExtraText
+   :members:
+
 ``svgmazes``: Functionality to output mazes to SVG
 ==================================================
 

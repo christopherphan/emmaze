@@ -7,7 +7,7 @@ import argparse
 from typing import Final
 
 import mazeing.maze as mz
-import mazeing.svgfunctions as svgfunctions
+import mazeing.solutions as solutions
 import mazeing.svgmazes as svgmazes
 
 __author__ = "Christopher L. Phan"
@@ -46,33 +46,11 @@ SOFTWARE.
 """
 
 
-def wall_follower_svg(maze: mz.Maze) -> str:
+def wall_follower_svg(maze: mz.Maze) -> svgmazes.WallFollowerSVGData:
     """Create a maze and output to SVG using WallFollower approach."""
-    svg_data = svgmazes.WallFollowerSVGData(
+    return svgmazes.WallFollowerSVGData(
         maze, 10 * maze.rows, 10 * maze.cols, svgmazes.GraphicalCoordinates(5, 5)
     )
-    # HTML file
-    style_info = """
-          body {
-            background-color: white;
-          }
-
-          div.pic {
-            width: 95vw;
-            margin: 2vw;
-          }
-    """
-    docstring = "<!doctype html>"
-    style_elt = svgfunctions.Element("style", interior=[style_info])
-    title = svgfunctions.Element("title", interior="MAZE!", separate_interior=False)
-    head = svgfunctions.Element("head", interior=[title, style_elt])
-    pic = svgfunctions.Element(
-        "div", interior=[svg_data.SVG], attributes={"class": "pic"}
-    )
-    body = svgfunctions.Element("body", interior=[pic])
-    html = svgfunctions.Element("html", interior=[head, body])
-
-    return docstring + "\n" + str(html)
 
 
 EXIT_ARGS: Final[dict[str, str]] = {
@@ -93,6 +71,7 @@ if __name__ == "__main__":
         help="number of rows in the maze",
         default=10,
     )
+
     parser.add_argument(
         "--cols",
         "-c",
@@ -118,6 +97,11 @@ if __name__ == "__main__":
         type=str,
         help="file to output to (default is standard output)",
     )
+
+    parser.add_argument(
+        "--solutions", "-s", action="store_true", help="include solutions"
+    )
+
     for key, value in EXIT_ARGS.items():
         parser.add_argument(
             f"--{key}-exit",
@@ -151,16 +135,47 @@ if __name__ == "__main__":
             args["rows"], args["cols"], maze_exits, spawn_probability=0.1
         )
         maze_text: str = ""
+        solution_text: str = ""
+
+        if args["solutions"]:
+            if len(maze_exits) < 2:
+                raise ValueError("Need at least two exits.")
+            maze_solvers = [
+                solutions.MazeSolver(
+                    maze, start.cell_position(maze), end.cell_position(maze)
+                )
+                for start, end in zip(maze_exits[:-1], maze_exits[1:])
+            ]
+            for solver in maze_solvers:
+                solver.run()
 
         if args["output_type"] == "text":
             maze_text = maze.str_version("#")
+            if args["solutions"]:
+                solution_text = "NOT IMPLEMENTED"  # TODO
         elif args["output_type"] == "block":
             maze_text = maze.str_version("\u2588")
+            if args["solutions"]:
+                solution_text = "NOT IMPLEMENTED"  # TODO
         elif args["output_type"] == "svg":
-            maze_text = wall_follower_svg(maze)
+            maze_svg_data = wall_follower_svg(maze)
+            maze_text = maze_svg_data.SVG_standalone().output()
+            solution_text = maze_svg_data.SVG_standalone(
+                [
+                    solver.svg_path(
+                        maze_svg_data.svg_info.width,
+                        maze_svg_data.svg_info.height,
+                        maze_svg_data.svg_info.offset,
+                    )
+                    for solver in maze_solvers
+                ]
+            ).output()
 
         if args["output_file"] is None:
             print(maze_text)
         else:
             with open(args["output_file"], "wt") as outfile:
                 outfile.write(maze_text)
+            if args["solutions"] and solution_text:
+                with open(f"solution_{args['output_file']}", "wt") as outfile:
+                    outfile.write(solution_text)
