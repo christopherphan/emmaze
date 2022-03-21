@@ -45,6 +45,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+WALL_CHARACTER_DICT: Final[dict[str, str]] = {"text": "#", "block": "\u2588"}
+
 
 def wall_follower_svg(maze: mz.Maze) -> svgmazes.WallFollowerSVGData:
     """Create a maze and output to SVG using WallFollower approach."""
@@ -149,14 +151,13 @@ if __name__ == "__main__":
             for solver in maze_solvers:
                 solver.run()
 
-        if args["output_type"] == "text":
-            maze_text = maze.str_version("#")
+        if args["output_type"] in WALL_CHARACTER_DICT:
+            maze_text = maze.str_version(WALL_CHARACTER_DICT[args["output_type"]])
             if args["solutions"]:
-                solution_text = "NOT IMPLEMENTED"  # TODO
-        elif args["output_type"] == "block":
-            maze_text = maze.str_version("\u2588")
-            if args["solutions"]:
-                solution_text = "NOT IMPLEMENTED"  # TODO
+                solution_text = maze_text
+                for solver in maze_solvers:
+                    solution_text = solver.append_text_solution(solution_text)
+
         elif args["output_type"] == "svg":
             maze_svg_data = wall_follower_svg(maze)
             maze_text = maze_svg_data.SVG_standalone().output()
@@ -173,6 +174,8 @@ if __name__ == "__main__":
 
         if args["output_file"] is None:
             print(maze_text)
+            if args["solutions"] and solution_text:
+                print("\n\n" + solution_text)
         else:
             with open(args["output_file"], "wt") as outfile:
                 outfile.write(maze_text)

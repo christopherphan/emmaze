@@ -7,6 +7,36 @@ import mazeing.svgfunctions as svgfunctions
 import mazeing.svgmazes as svgmazes
 
 
+def _make_text_step_range(start: int, end: int, include_end: bool) -> range:
+    """Make a range for the integers between ``start`` and ``end``."""
+    if start < end:
+        return range(start, end + int(include_end))
+    elif start > end:
+        return range(end + int(not include_end), start + 1)
+    else:
+        raise ValueError("Positions are the same")
+
+
+def _text_step(
+    start: mz.Position, end: mz.Position, include_end: bool = False
+) -> list[tuple[int, int]]:
+    """
+    Return the characters that represent the steps between two positions.
+
+    The positions must be in the same row or column.
+    """
+    initial = start.text_location
+    final = end.text_location
+    if all(a != b for a, b in zip(initial, final)):
+        raise ValueError("Not in the same row or same column.")
+    if initial[0] == final[0]:  # same column
+        rg = _make_text_step_range(initial[1], final[1], include_end)
+        return [(initial[0], y) for y in rg]
+    else:  # same row
+        rg = _make_text_step_range(initial[0], final[0], include_end)
+        return [(x, initial[1]) for x in rg]
+
+
 class MazeSolver:
     """A worker that solves mazes."""
 
@@ -125,3 +155,23 @@ class MazeSolver:
     ) -> None:
         """Add the path to the interior of the element (in-place)."""
         svg.interior.append(self.svg_path(width, height, offset))
+
+    def append_text_solution(
+        self: MazeSolver, maze_str: str, step_char: str = "+"
+    ) -> str:
+        """Append solution to a text version of the maze."""
+        path: list[mz.Position]
+        if self.active and not self.completed:
+            path = self.run()
+        else:
+            path = self.path
+        text_path: list[tuple[int, int]] = sum(
+            (_text_step(start, end) for start, end in zip(path[:-1], path[1:])),
+            start=[],
+        ) + [  # type: ignore
+            path[-1].text_location
+        ]
+        text_version = maze_str.split("\n")
+        for a, b in text_path:
+            text_version[b] = text_version[b][:a] + step_char + text_version[b][a + 1 :]
+        return "\n".join(text_version)
