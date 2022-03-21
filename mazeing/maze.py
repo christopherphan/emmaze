@@ -71,6 +71,11 @@ class Position:
         if direction == "west":
             return "NS", self.row, self.column
 
+    @property
+    def text_location(self: Position) -> tuple[int, int]:
+        """Return character position for an text-art maze."""
+        return 2 * self.column + 1, 2 * self.row + 1
+
 
 @dataclass
 class DirectionInfo(Generic[T]):
