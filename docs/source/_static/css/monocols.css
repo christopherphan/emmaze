@@ -1,0 +1,13 @@
+.highlight > pre {
+  font-size: 1rem;
+  line-height: 1.25rem;
+  padding: 0px;
+  background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 1.25rem,
+      rgba(0, 0, 0, 0.05) 1.25rem,
+      rgba(0, 0, 0, 0.05) 2.5rem
+    ),
+    repeating-linear-gradient(to right, azure, azure 1ch, beige 1ch, beige 2ch);
+}

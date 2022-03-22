@@ -9,12 +9,13 @@ from typing import Final
 import mazeing.maze as mz
 import mazeing.solutions as solutions
 import mazeing.svgmazes as svgmazes
+from mazeing.jsonsupport import json_to_maze, maze_to_json
 
 __author__ = "Christopher L. Phan"
 __copyright__ = "Copyright \u00A9 2022, Christopher L. Phan"
 __license__ = "MIT"
-__version__ = "development 2022-03-20"
-__date__ = "2022-03-20"
+__version__ = "0.0.1"
+__date__ = "2022-03-21"
 __maintainer__ = "Christopher L. Phan"
 __email__ = "cphan@chrisphan.com"
 
@@ -61,10 +62,19 @@ EXIT_ARGS: Final[dict[str, str]] = {
     "south": "column",
     "west": "row",
 }
-OUTPUT_TYPES: Final[list[str]] = ["text", "block", "svg"]
+OUTPUT_TYPES: Final[list[str]] = ["text", "block", "svg", "json"]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate random mazes.")
+
+    parser.add_argument(
+        "--import_json",
+        "-j",
+        nargs="?",
+        type=str,
+        help="import a maze from a JSON file",
+    )
+
     parser.add_argument(
         "--rows",
         "-r",
@@ -82,6 +92,7 @@ if __name__ == "__main__":
         help="number of columns in the maze",
         default=10,
     )
+
     parser.add_argument(
         "--output_type",
         "-t",
@@ -127,19 +138,27 @@ if __name__ == "__main__":
     if args["copyright"]:
         print(LICENSE)
     else:
-        maze_exits = [
-            mz.MazeExit(direction, value)
-            for direction in mz.DIRECTIONS
-            if (value := args[f"{direction}_exit"]) is not None
-        ]
+        maze: mz.Maze
+        maze_exits: list[mz.MazeExit]
+        solns: list[solutions.MazePath] = []
+        if args["import_json"]:
+            with open(args["import_json"], "rt") as infile:
+                maze, solns = json_to_maze(infile.read())
+                maze_exits = maze.exits
+        else:
+            maze_exits = [
+                mz.MazeExit(direction, value)
+                for direction in mz.DIRECTIONS
+                if (value := args[f"{direction}_exit"]) is not None
+            ]
 
-        maze = mz.make_maze(
-            args["rows"], args["cols"], maze_exits, spawn_probability=0.1
-        )
+            maze = mz.make_maze(
+                args["rows"], args["cols"], maze_exits, spawn_probability=0.1
+            )
         maze_text: str = ""
         solution_text: str = ""
 
-        if args["solutions"]:
+        if args["solutions"] and not solns:
             if len(maze_exits) < 2:
                 raise ValueError("Need at least two exits.")
             maze_solvers = [
@@ -148,29 +167,33 @@ if __name__ == "__main__":
                 )
                 for start, end in zip(maze_exits[:-1], maze_exits[1:])
             ]
-            for solver in maze_solvers:
-                solver.run()
+            solns = [solver.run() for solver in maze_solvers]
 
         if args["output_type"] in WALL_CHARACTER_DICT:
             maze_text = maze.str_version(WALL_CHARACTER_DICT[args["output_type"]])
             if args["solutions"]:
                 solution_text = maze_text
-                for solver in maze_solvers:
-                    solution_text = solver.append_text_solution(solution_text)
+                for mp in solns:
+                    solution_text = mp.append_text_solution(solution_text)
 
         elif args["output_type"] == "svg":
             maze_svg_data = wall_follower_svg(maze)
             maze_text = maze_svg_data.SVG_standalone().output()
-            solution_text = maze_svg_data.SVG_standalone(
-                [
-                    solver.svg_path(
-                        maze_svg_data.svg_info.width,
-                        maze_svg_data.svg_info.height,
-                        maze_svg_data.svg_info.offset,
-                    )
-                    for solver in maze_solvers
-                ]
-            ).output()
+            if args["solutions"]:
+                solution_text = maze_svg_data.SVG_standalone(
+                    [
+                        mp.svg_path(
+                            maze,
+                            maze_svg_data.svg_info.width,
+                            maze_svg_data.svg_info.height,
+                            maze_svg_data.svg_info.offset,
+                        )
+                        for mp in solns
+                    ]
+                ).output()
+
+        elif args["output_type"] == "json":
+            maze_text = maze_to_json(maze, solns)
 
         if args["output_file"] is None:
             print(maze_text)

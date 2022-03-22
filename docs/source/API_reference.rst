@@ -7,6 +7,18 @@ API Reference
    :maxdepth: 2
    :caption: Contents:
 
+``jsonsupport``: Support for JSON import and export
+===================================================
+.. automodule:: mazeing.jsonsupport
+
+Functions
+---------
+
+.. autofunction:: json_to_maze
+
+.. autofunction:: maze_to_json
+
+
 ``maze``: Core functionality
 =============================================================
 
@@ -64,8 +76,11 @@ Functions
 
 .. automodule:: mazeing.solutions
 
-Class
------
+Classes
+-------
+
+.. autoclass:: MazePath
+   :members:
 
 .. autoclass:: MazeSolver
    :members:
@@ -76,8 +91,8 @@ Class
 
 .. automodule:: mazeing.svgfunctions
 
-Class
------
+Classes
+-------
 
 .. autoclass:: Element
    :members:

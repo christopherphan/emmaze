@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import mazeing.maze as mz
 import mazeing.svgfunctions as svgfunctions
 import mazeing.svgmazes as svgmazes
@@ -35,6 +37,61 @@ def _text_step(
     else:  # same row
         rg = _make_text_step_range(initial[0], final[0], include_end)
         return [(x, initial[1]) for x in rg]
+
+
+class MazePath:
+    """Represent a path through the maze."""
+
+    def __init__(self: MazePath, path: Sequence[mz.Position]) -> None:
+        """Initialize object."""
+        if not all(
+            pos1.neighbor.with_value(pos2) for pos1, pos2 in zip(path[:-1], path[1:])
+        ):
+            raise ValueError("Not a valid path.")
+        self.path = list(path)
+
+    def svg_path(
+        self: MazePath,
+        maze: mz.Maze,
+        width: float,
+        height: float,
+        offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
+    ) -> svgfunctions.Element:
+        """Convert to an SVG path."""
+        svg_info = svgmazes.SVGInfo(width, height, maze.rows, maze.cols, offset)
+        graphical_path = svgmazes.GraphicalPath(
+            [svg_info.cell_position(k) for k in self.path]
+        )
+        return graphical_path.svg_polyline("red")
+
+    def add_path_to_svg(
+        self: MazePath,
+        maze: mz.Maze,
+        width: float,
+        height: float,
+        svg: svgfunctions.Element,
+        offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
+    ) -> None:
+        """Add the path to the interior of the element (in-place)."""
+        svg.interior.append(self.svg_path(maze, width, height, offset))
+
+    def append_text_solution(
+        self: MazePath, maze_str: str, step_char: str = "+"
+    ) -> str:
+        """Append path to a text version of the maze."""
+        text_path: list[tuple[int, int]] = sum(
+            (
+                _text_step(start, end)
+                for start, end in zip(self.path[:-1], self.path[1:])
+            ),
+            start=[],
+        ) + [  # type: ignore
+            self.path[-1].text_location
+        ]
+        text_version = maze_str.split("\n")
+        for a, b in text_path:
+            text_version[b] = text_version[b][:a] + step_char + text_version[b][a + 1 :]
+        return "\n".join(text_version)
 
 
 class MazeSolver:
@@ -117,12 +174,12 @@ class MazeSolver:
         self.visited.append(self.current_position)
         self.path.append(self.current_position)
 
-    def run(self: MazeSolver) -> list[mz.Position]:
+    def run(self: MazeSolver) -> MazePath:
         """Return a path from the start to goal."""
         while self.active and not self.completed:
             self.step()
         if self.completed:
-            return self.path
+            return MazePath(self.path)
         else:
             raise ValueError("No solution")
 
@@ -133,18 +190,8 @@ class MazeSolver:
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
     ) -> svgfunctions.Element:
         """Return an SVG path of the solution."""
-        path: list[mz.Position]
-        if self.active and not self.completed:
-            path = self.run()
-        else:
-            path = self.path
-        svg_info = svgmazes.SVGInfo(
-            width, height, self.maze.rows, self.maze.cols, offset
-        )
-        graphical_path = svgmazes.GraphicalPath(
-            [svg_info.cell_position(k) for k in path]
-        )
-        return graphical_path.svg_polyline("red")
+        path: MazePath = self.run()
+        return path.svg_path(self.maze, width, height, offset)
 
     def add_path_to_svg(
         self: MazeSolver,
@@ -154,24 +201,12 @@ class MazeSolver:
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
     ) -> None:
         """Add the path to the interior of the element (in-place)."""
-        svg.interior.append(self.svg_path(width, height, offset))
+        path: MazePath = self.run()
+        path.add_path_to_svg(self.maze, width, height, svg, offset)
 
     def append_text_solution(
         self: MazeSolver, maze_str: str, step_char: str = "+"
     ) -> str:
         """Append solution to a text version of the maze."""
-        path: list[mz.Position]
-        if self.active and not self.completed:
-            path = self.run()
-        else:
-            path = self.path
-        text_path: list[tuple[int, int]] = sum(
-            (_text_step(start, end) for start, end in zip(path[:-1], path[1:])),
-            start=[],
-        ) + [  # type: ignore
-            path[-1].text_location
-        ]
-        text_version = maze_str.split("\n")
-        for a, b in text_path:
-            text_version[b] = text_version[b][:a] + step_char + text_version[b][a + 1 :]
-        return "\n".join(text_version)
+        path: MazePath = self.run()
+        return path.append_text_solution(maze_str, step_char)

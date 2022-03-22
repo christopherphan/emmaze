@@ -346,6 +346,11 @@ class Maze:
                     cell_pos.row
                 ] = False
 
+    @property
+    def wall_data(self: Maze) -> list[WallLine]:
+        """Return all the ``WallLine`` objects associated with the maze."""
+        return self._ns_walls + self._ew_walls
+
     def valid_cell(self: Maze, position: Position) -> bool:
         """Return ``True`` if ``position`` is the location of a cell."""
         return (
