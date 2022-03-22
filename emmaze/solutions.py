@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-import mazeing.maze as mz
-import mazeing.svgfunctions as svgfunctions
-import mazeing.svgmazes as svgmazes
+import emmaze.maze as mz
+import emmaze.svgfunctions as svgfunctions
+import emmaze.svgmazes as svgmazes
 
 
 def _make_text_step_range(start: int, end: int, include_end: bool) -> range:

@@ -9,7 +9,7 @@ API Reference
 
 ``jsonsupport``: Support for JSON import and export
 ===================================================
-.. automodule:: mazeing.jsonsupport
+.. automodule:: emmaze.jsonsupport
 
 Functions
 ---------
@@ -22,7 +22,7 @@ Functions
 ``maze``: Core functionality
 =============================================================
 
-.. automodule:: mazeing.maze
+.. automodule:: emmaze.maze
 
 Type aliases
 ------------
@@ -74,7 +74,7 @@ Functions
 ``solutions``: Solve mazes and display solutions
 ================================================
 
-.. automodule:: mazeing.solutions
+.. automodule:: emmaze.solutions
 
 Classes
 -------
@@ -89,7 +89,7 @@ Classes
 ``svgfunctions``: Helper for making HTML/XML/SVG documents
 ==========================================================
 
-.. automodule:: mazeing.svgfunctions
+.. automodule:: emmaze.svgfunctions
 
 Classes
 -------
@@ -103,7 +103,7 @@ Classes
 ``svgmazes``: Functionality to output mazes to SVG
 ==================================================
 
-.. automodule:: mazeing.svgmazes
+.. automodule:: emmaze.svgmazes
 
 Type aliases
 ------------

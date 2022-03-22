@@ -4,8 +4,8 @@ from collections.abc import Sequence
 from json import dumps, loads
 from typing import Final, Literal, Optional
 
-import mazeing.maze as mz
-from mazeing.solutions import MazePath
+import emmaze.maze as mz
+from emmaze.solutions import MazePath
 
 
 def _WallLine_to_int(wall_line: mz.WallLine[bool]) -> int:

@@ -9,8 +9,8 @@ from math import ceil, fsum
 from numbers import Real
 from typing import Final, Literal, NamedTuple, Optional, TypeAlias
 
-import mazeing.maze as mz
-import mazeing.svgfunctions as svgfunctions
+import emmaze.maze as mz
+import emmaze.svgfunctions as svgfunctions
 
 WALL_THICKNESS_SETTING: TypeAlias = Literal["cellsize", "absolute"]
 

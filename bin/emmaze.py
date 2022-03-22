@@ -6,10 +6,10 @@ from __future__ import annotations
 import argparse
 from typing import Final
 
-import mazeing.maze as mz
-import mazeing.solutions as solutions
-import mazeing.svgmazes as svgmazes
-from mazeing.jsonsupport import json_to_maze, maze_to_json
+import emmaze.maze as mz
+import emmaze.solutions as solutions
+import emmaze.svgmazes as svgmazes
+from emmaze.jsonsupport import json_to_maze, maze_to_json
 
 __author__ = "Christopher L. Phan"
 __copyright__ = "Copyright \u00A9 2022, Christopher L. Phan"
