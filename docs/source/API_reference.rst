@@ -7,10 +7,22 @@ API Reference
    :maxdepth: 2
    :caption: Contents:
 
+``jsonsupport``: Support for JSON import and export
+===================================================
+.. automodule:: emmaze.jsonsupport
+
+Functions
+---------
+
+.. autofunction:: json_to_maze
+
+.. autofunction:: maze_to_json
+
+
 ``maze``: Core functionality
 =============================================================
 
-.. automodule:: mazeing.maze
+.. automodule:: emmaze.maze
 
 Type aliases
 ------------
@@ -62,10 +74,13 @@ Functions
 ``solutions``: Solve mazes and display solutions
 ================================================
 
-.. automodule:: mazeing.solutions
+.. automodule:: emmaze.solutions
 
-Class
------
+Classes
+-------
+
+.. autoclass:: MazePath
+   :members:
 
 .. autoclass:: MazeSolver
    :members:
@@ -74,10 +89,10 @@ Class
 ``svgfunctions``: Helper for making HTML/XML/SVG documents
 ==========================================================
 
-.. automodule:: mazeing.svgfunctions
+.. automodule:: emmaze.svgfunctions
 
-Class
------
+Classes
+-------
 
 .. autoclass:: Element
    :members:
@@ -88,7 +103,7 @@ Class
 ``svgmazes``: Functionality to output mazes to SVG
 ==================================================
 
-.. automodule:: mazeing.svgmazes
+.. automodule:: emmaze.svgmazes
 
 Type aliases
 ------------
