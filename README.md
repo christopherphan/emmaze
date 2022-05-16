@@ -17,7 +17,8 @@ subject to change.
 
 - Requires Python 3.10.
 - No pypi package yet (not ready for primetime), but you are welcome
-  to clone the repo and play with it.
+  to clone/fork the repo and play with it, as provided by the 
+  [MIT License](LICENSE).
 
 ## Documentation/usage
 
