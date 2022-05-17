@@ -36,8 +36,8 @@ from emmaze.jsonsupport import json_to_maze, maze_to_json
 __author__ = "Christopher L. Phan"
 __copyright__ = "Copyright \u00A9 2022, Christopher L. Phan"
 __license__ = "MIT"
-__version__ = "0.0.1"
-__date__ = "2022-03-21"
+__version__ = "0.0.2"
+__date__ = "2022-05-16"
 __maintainer__ = "Christopher L. Phan"
 __email__ = "cphan@chrisphan.com"
 
@@ -68,6 +68,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+# Define the character for the walls in a text-art maze. \u2588 is a solid block.
 WALL_CHARACTER_DICT: Final[dict[str, str]] = {"text": "#", "block": "\u2588"}
 
 
@@ -148,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--copyright",
         action="store_true",
-        help="Display copyright and license information, and then exit",
+        help="show program's copyright and license information and exit",
     )
 
     parser.add_argument(
