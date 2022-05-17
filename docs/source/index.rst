@@ -1,7 +1,4 @@
-.. Mazeing documentation master file, created by
-   sphinx-quickstart on Thu Mar 17 18:45:05 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. Emmaze documentation main file
 
 Welcome to Emmaze's documentation!
 ===================================
@@ -10,8 +7,11 @@ Welcome to Emmaze's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   Basic_usage
+   Command_line_usage
+   JSON_maze_format
    API_reference
-
+   Copyright_and_license
 
 Indices and tables
 ==================
