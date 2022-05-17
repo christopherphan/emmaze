@@ -2,16 +2,20 @@
 Legal
 =====
 
-This package is protected under copyright and offered for use under the following
-license (`MIT license <https://mit-license.org>`_):
+Maintainer contact info
+-----------------------
 
+* Web: `<http://chrisphan.com/>`_
+
+* Github: `<https://github.com/christopherphan>`_
 
 .. _license:
 
 License
 -------
 
-MIT License
+This package is protected under copyright and offered for use under the following
+license (`MIT license <https://github.com/christopherphan/emmaze/blob/main/LICENSE>`_):
 
 Copyright (c) 2022 Christopher L. Phan
 
@@ -32,3 +36,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
