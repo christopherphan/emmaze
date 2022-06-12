@@ -241,11 +241,15 @@ class GraphicalPath(Sequence):
         )
 
     def svg_polyline(
-        self: GraphicalPath, stroke: str = "black"
+        self: GraphicalPath, stroke: str = "black", dashpattern: Optional[str] = None
     ) -> svgfunctions.Element:
         """Return an SVG polyline version of the path."""
         return svgfunctions.Element.make_svg_polyline(
-            [(pt.x, pt.y) for pt in self._coords], stroke=stroke
+            [(pt.x, pt.y) for pt in self._coords],
+            stroke=stroke,
+            attributes=(
+                {"stroke-dasharray": dashpattern} if dashpattern is not None else None
+            ),
         )
 
     @property
@@ -557,10 +561,10 @@ class WallFollowerSVGData:
 
     def SVG_standalone(
         self: WallFollowerSVGData,
-        other_elts: Optional[Sequence[svgfunctions.Elements]] = None,
+        other_elts: Optional[Sequence[svgfunctions.Element]] = None,
     ) -> svgfunctions.ElementWithExtraText:
         """Return standalonw SVG of the maze."""
-        add_elts: list[svgfunctions.Elements]
+        add_elts: list[svgfunctions.Element]
         if other_elts is None:
             add_elts = []
         else:

@@ -210,6 +210,7 @@ if __name__ == "__main__":
                             maze_svg_data.svg_info.width,
                             maze_svg_data.svg_info.height,
                             maze_svg_data.svg_info.offset,
+                            dashpattern="5,5",
                         )
                         for mp in solns
                     ]

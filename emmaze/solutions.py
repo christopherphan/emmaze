@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Optional
 
 import emmaze.maze as mz
 import emmaze.svgfunctions as svgfunctions
@@ -78,13 +79,14 @@ class MazePath:
         width: float,
         height: float,
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
+        dashpattern: Optional[str] = None,
     ) -> svgfunctions.Element:
         """Convert to an SVG path."""
         svg_info = svgmazes.SVGInfo(width, height, maze.rows, maze.cols, offset)
         graphical_path = svgmazes.GraphicalPath(
             [svg_info.cell_position(k) for k in self.path]
         )
-        return graphical_path.svg_polyline("red")
+        return graphical_path.svg_polyline("red", dashpattern)
 
     def add_path_to_svg(
         self: MazePath,
@@ -93,9 +95,10 @@ class MazePath:
         height: float,
         svg: svgfunctions.Element,
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
+        dashpattern: Optional[str] = None,
     ) -> None:
         """Add the path to the interior of the element (in-place)."""
-        svg.interior.append(self.svg_path(maze, width, height, offset))
+        svg.interior.append(self.svg_path(maze, width, height, offset, dashpattern))
 
     def append_text_solution(
         self: MazePath, maze_str: str, step_char: str = "+"
@@ -210,10 +213,11 @@ class MazeSolver:
         width: float,
         height: float,
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
+        dashpattern: Optional[str] = None,
     ) -> svgfunctions.Element:
         """Return an SVG path of the solution."""
         path: MazePath = self.run()
-        return path.svg_path(self.maze, width, height, offset)
+        return path.svg_path(self.maze, width, height, offset, dashpattern)
 
     def add_path_to_svg(
         self: MazeSolver,
@@ -221,10 +225,11 @@ class MazeSolver:
         height: float,
         svg: svgfunctions.Element,
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
+        dashpattern: Optional[str] = None,
     ) -> None:
         """Add the path to the interior of the element (in-place)."""
         path: MazePath = self.run()
-        path.add_path_to_svg(self.maze, width, height, svg, offset)
+        path.add_path_to_svg(self.maze, width, height, svg, offset, dashpattern)
 
     def append_text_solution(
         self: MazeSolver, maze_str: str, step_char: str = "+"
