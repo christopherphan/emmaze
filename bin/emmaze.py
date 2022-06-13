@@ -36,8 +36,8 @@ from emmaze.jsonsupport import json_to_maze, maze_to_json
 __author__ = "Christopher L. Phan"
 __copyright__ = "Copyright \u00A9 2022, Christopher L. Phan"
 __license__ = "MIT"
-__version__ = "0.0.2"
-__date__ = "2022-05-16"
+__version__ = "0.0.3"
+__date__ = "2022-06-12"
 __maintainer__ = "Christopher L. Phan"
 __email__ = "cphan@chrisphan.com"
 
