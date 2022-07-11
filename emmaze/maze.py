@@ -453,8 +453,8 @@ class Maze:
         (3, 0) to (6, 3), etc.
         """
         total_cell_size = cell_size + wall_size
-        if (x < 0 or x > total_cell_size * self.cols + wall_size) or (
-            y < 0 or y > total_cell_size * self.rows + wall_size
+        if (x < 0 or x >= total_cell_size * self.cols + wall_size) or (
+            y < 0 or y >= total_cell_size * self.rows + wall_size
         ):
             return False
         if x % total_cell_size < wall_size and y % total_cell_size < wall_size:
@@ -466,7 +466,11 @@ class Maze:
         return False
 
     def str_version(
-        self: Maze, wall_chr: str = "#", cell_size: int = 1, wall_size: int = 1
+        self: Maze,
+        wall_chr: str = "#",
+        cell_size: int = 1,
+        wall_size: int = 1,
+        border_size: int = 0,
     ) -> str:
         """
         Return ASCII art version of the maze.
@@ -483,16 +487,21 @@ class Maze:
         :param wall_size: Thickness of walls in characters, defaults to 1.
         :type wall_size: int
 
+        :param border_size: Thickness of the border, defaults to 0.
+        :type border_size: int
+
         :returns: An ASCII-art version of the maze.
         :rtype: str
         """
         total_size = cell_size + wall_size
         return "\n".join(
             "".join(
-                wall_chr if self.solid(x, y, cell_size, wall_size) else " "
-                for x in range(total_size * self.cols + wall_size)
+                wall_chr
+                if self.solid(x - border_size, y - border_size, cell_size, wall_size)
+                else " "
+                for x in range(total_size * self.cols + wall_size + 2 * border_size)
             )
-            for y in range(total_size * self.rows + wall_size)
+            for y in range(total_size * self.rows + wall_size + 2 * border_size)
         )
 
     def __str__(self: Maze) -> str:
@@ -500,7 +509,11 @@ class Maze:
         return self.str_version()
 
     def make_png(
-        self: Maze, f: BufferedWriter, cell_size: int = 1, wall_size: int = 1
+        self: Maze,
+        f: BufferedWriter,
+        cell_size: int = 1,
+        wall_size: int = 1,
+        border_size: int = 0,
     ) -> None:
         """
         Write a PNG version of the maze to a file.
@@ -513,16 +526,19 @@ class Maze:
 
         :param wall_size: The thickness of each wall in pixels, defaults to 1.
         :type wall_size: int
+
+        :param border_size: The thickness of the border in pixels, defaults to 0.
+        :type border_size: int
         """
         total_size = cell_size + wall_size
         bitmap = [
             [int(col) for col in row]
-            for row in self.str_version("0", cell_size, wall_size)
+            for row in self.str_version("0", cell_size, wall_size, border_size)
             .replace(" ", "1")
             .split("\n")
         ]
-        width = self.cols * total_size + wall_size
-        height = self.rows * total_size + wall_size
+        width = self.cols * total_size + wall_size + 2 * border_size
+        height = self.rows * total_size + wall_size + 2 * border_size
         writer = png.Writer(width, height, greyscale=True, bitdepth=1)
         writer.write(f, bitmap)
 

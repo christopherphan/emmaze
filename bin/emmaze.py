@@ -124,7 +124,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--output_type",
+        "--output-type",
         "-t",
         type=str,
         nargs="?",
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         default="text",
     )
     parser.add_argument(
-        "--output_file",
+        "--output-file",
         "-o",
         nargs="?",
         metavar="FILE",
@@ -142,7 +142,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--cell_size",
+        "--cell-size",
+        "-l",
         nargs="?",
         metavar="CELLSIZE",
         type=int,
@@ -154,13 +155,25 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--wall_size",
+        "--wall-size",
+        "-w",
         nargs="?",
         metavar="WALLSIZE",
         type=int,
         default=1,
         help="thickness of the maze walls (default is 1)",
     )
+
+    parser.add_argument(
+        "--border-size",
+        "-b",
+        nargs="?",
+        metavar="BORDERSIZE",
+        type=int,
+        default=0,
+        help=("thickness of the border (default is 0)"),
+    )
+
     parser.add_argument(
         "--solutions", "-s", action="store_true", help="include solutions"
     )
@@ -192,6 +205,8 @@ if __name__ == "__main__":
             raise ValueError("Invalid cell size; must be a positive integer.")
         if args["wall_size"] < 1:
             raise ValueError("Invalid wall size; must be a positive integer.")
+        if args["border_size"] < 0:
+            raise ValueError("Invalid border size; must be a nonnegative integer.")
         maze: mz.Maze
         maze_exits: list[mz.MazeExit]
         solns: list[solutions.MazePath] = []
@@ -229,7 +244,10 @@ if __name__ == "__main__":
             else:
                 cell_size = args["cell_size"]
             maze_text = maze.str_version(
-                WALL_CHARACTER_DICT[args["output_type"]], cell_size, args["wall_size"]
+                WALL_CHARACTER_DICT[args["output_type"]],
+                cell_size,
+                args["wall_size"],
+                args["border_size"],
             )
             if args["solutions"]:
                 solution_text = maze_text
@@ -273,7 +291,9 @@ if __name__ == "__main__":
             else:
                 cell_size = args["cell_size"]
             with open(args["output_file"], "wb") as svgfile:
-                maze.make_png(svgfile, cell_size, args["wall_size"])
+                maze.make_png(
+                    svgfile, cell_size, args["wall_size"], args["border_size"]
+                )
         else:
             with open(args["output_file"], "wt") as outfile:
                 outfile.write(maze_text)
