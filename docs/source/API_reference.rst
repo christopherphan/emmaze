@@ -70,6 +70,12 @@ Functions
 
 .. autofunction:: make_maze
 
+``pngmazes``: Functionality to output mazes in PNG format
+=========================================================
+
+.. automodule:: emmaze.pngmazes
+   :members:
+
 
 ``solutions``: Solve mazes and display solutions
 ================================================

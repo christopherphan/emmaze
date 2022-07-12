@@ -29,6 +29,7 @@ import argparse
 from typing import Final
 
 import emmaze.maze as mz
+import emmaze.pngmazes as pngmazes
 import emmaze.solutions as solutions
 import emmaze.svgmazes as svgmazes
 from emmaze.jsonsupport import json_to_maze, maze_to_json
@@ -36,8 +37,8 @@ from emmaze.jsonsupport import json_to_maze, maze_to_json
 __author__ = "Christopher L. Phan"
 __copyright__ = "Copyright \u00A9 2022, Christopher L. Phan"
 __license__ = "MIT"
-__version__ = "0.0.3"
-__date__ = "2022-06-12"
+__version__ = "0.0.4"
+__date__ = "2022-07-09"
 __maintainer__ = "Christopher L. Phan"
 __email__ = "cphan@chrisphan.com"
 
@@ -72,10 +73,17 @@ SOFTWARE.
 WALL_CHARACTER_DICT: Final[dict[str, str]] = {"text": "#", "block": "\u2588"}
 
 
-def wall_follower_svg(maze: mz.Maze) -> svgmazes.WallFollowerSVGData:
+def wall_follower_svg(
+    maze: mz.Maze, cell_size: int = 19, wall_size: int = 1
+) -> svgmazes.WallFollowerSVGData:
     """Create a maze and output to SVG using WallFollower approach."""
+    wall_thickness = wall_size / (cell_size + wall_size)
     return svgmazes.WallFollowerSVGData(
-        maze, 10 * maze.rows, 10 * maze.cols, svgmazes.GraphicalCoordinates(5, 5)
+        maze,
+        10 * maze.rows,
+        10 * maze.cols,
+        svgmazes.GraphicalCoordinates(5, 5),
+        wall_thickness,
     )
 
 
@@ -85,7 +93,7 @@ EXIT_ARGS: Final[dict[str, str]] = {
     "south": "column",
     "west": "row",
 }
-OUTPUT_TYPES: Final[list[str]] = ["text", "block", "svg", "json"]
+OUTPUT_TYPES: Final[list[str]] = ["text", "block", "svg", "json", "png"]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate random mazes.")
@@ -117,7 +125,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--output_type",
+        "--output-type",
         "-t",
         type=str,
         nargs="?",
@@ -126,12 +134,45 @@ if __name__ == "__main__":
         default="text",
     )
     parser.add_argument(
-        "--output_file",
+        "--output-file",
         "-o",
         nargs="?",
         metavar="FILE",
         type=str,
         help="file to output to (default is standard output)",
+    )
+
+    parser.add_argument(
+        "--cell-size",
+        "-l",
+        nargs="?",
+        metavar="CELLSIZE",
+        type=int,
+        default=-1,
+        help=(
+            "dimensions of the maze cells "
+            + "(default is 1 for text-art and PNG, 19 for SVG)"
+        ),
+    )
+
+    parser.add_argument(
+        "--wall-size",
+        "-w",
+        nargs="?",
+        metavar="WALLSIZE",
+        type=int,
+        default=1,
+        help="thickness of the maze walls (default is 1)",
+    )
+
+    parser.add_argument(
+        "--border-size",
+        "-b",
+        nargs="?",
+        metavar="BORDERSIZE",
+        type=int,
+        default=0,
+        help=("thickness of the border (default is 0)"),
     )
 
     parser.add_argument(
@@ -161,6 +202,12 @@ if __name__ == "__main__":
     if args["copyright"]:
         print(LICENSE)
     else:
+        if args["cell_size"] != -1 and args["cell_size"] < 1:
+            raise ValueError("Invalid cell size; must be a positive integer.")
+        if args["wall_size"] < 1:
+            raise ValueError("Invalid wall size; must be a positive integer.")
+        if args["border_size"] < 0:
+            raise ValueError("Invalid border size; must be a nonnegative integer.")
         maze: mz.Maze
         maze_exits: list[mz.MazeExit]
         solns: list[solutions.MazePath] = []
@@ -193,14 +240,32 @@ if __name__ == "__main__":
             solns = [solver.run() for solver in maze_solvers]
 
         if args["output_type"] in WALL_CHARACTER_DICT:
-            maze_text = maze.str_version(WALL_CHARACTER_DICT[args["output_type"]])
+            if args["cell_size"] == -1:
+                cell_size = 1
+            else:
+                cell_size = args["cell_size"]
+            maze_text = maze.str_version(
+                WALL_CHARACTER_DICT[args["output_type"]],
+                cell_size,
+                args["wall_size"],
+                args["border_size"],
+            )
             if args["solutions"]:
                 solution_text = maze_text
                 for mp in solns:
-                    solution_text = mp.append_text_solution(solution_text)
+                    solution_text = mp.append_text_solution(
+                        solution_text,
+                        cell_size=cell_size,
+                        wall_size=args["wall_size"],
+                        border_size=args["border_size"],
+                    )
 
         elif args["output_type"] == "svg":
-            maze_svg_data = wall_follower_svg(maze)
+            if args["cell_size"] == -1:
+                cell_size = 19
+            else:
+                cell_size = args["cell_size"]
+            maze_svg_data = wall_follower_svg(maze, cell_size, args["wall_size"])
             maze_text = maze_svg_data.SVG_standalone().output()
             if args["solutions"]:
                 solution_text = maze_svg_data.SVG_standalone(
@@ -220,9 +285,33 @@ if __name__ == "__main__":
             maze_text = maze_to_json(maze, solns)
 
         if args["output_file"] is None:
-            print(maze_text)
-            if args["solutions"] and solution_text:
-                print("\n\n" + solution_text)
+            if args["output_type"] == "png":
+                raise ValueError("Filename is required for png output.")
+            else:
+                print(maze_text)
+                if args["solutions"] and solution_text:
+                    print("\n\n" + solution_text)
+        elif args["output_type"] == "png":
+            if args["cell_size"] == -1:
+                cell_size = 1
+            else:
+                cell_size = args["cell_size"]
+            maze_text = pngmazes.maze_png(
+                maze,
+                args["output_file"],
+                cell_size,
+                args["wall_size"],
+                args["border_size"],
+            )
+            if args["solutions"]:
+                pngmazes.soln_png(
+                    f"solution_{args['output_file']}",
+                    maze_solns=solns,
+                    maze_str=maze_text,
+                    cell_size=cell_size,
+                    wall_size=args["wall_size"],
+                    border_size=args["border_size"],
+                )
         else:
             with open(args["output_file"], "wt") as outfile:
                 outfile.write(maze_text)

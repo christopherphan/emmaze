@@ -93,10 +93,15 @@ class Position:
         if direction == "west":
             return "NS", self.row, self.column
 
-    @property
-    def text_location(self: Position) -> tuple[int, int]:
+    def text_location(
+        self: Position, cell_size: int = 1, wall_size: int = 1, border_size: int = 0
+    ) -> tuple[int, int]:
         """Return character position for an text-art maze."""
-        return 2 * self.column + 1, 2 * self.row + 1
+        total_size = cell_size + wall_size
+        return (
+            total_size * self.column + wall_size + border_size + cell_size // 2,
+            total_size * self.row + wall_size + border_size + cell_size // 2,
+        )
 
 
 @dataclass
@@ -199,26 +204,6 @@ class MazeExit:
 
     wall: DIRECTION_TYPE
     location: int
-
-    def string_output_location(self: MazeExit, maze: Maze) -> tuple[int, int]:
-        """
-        Return the location in an ASCII maze for the exit.
-
-        :param maze: The maze in which the exit is placed.
-        :type maze: Maze
-
-        :returns: The coordinates of the exit.
-        :rtype: tuple[int, int]
-        """
-        if self.wall == "north":
-            return (2 * self.location + 1, 0)
-        if self.wall == "west":
-            return (0, 2 * self.location + 1)
-        if self.wall == "east":
-            return (2 * maze.cols, 2 * self.location + 1)
-        if self.wall == "south":
-            return (2 * self.location + 1, 2 * maze.rows)
-        raise ValueError("Invalid direction.")
 
     def cell_position(self: MazeExit, maze: Maze) -> Position:
         """
@@ -444,24 +429,49 @@ class Maze:
             + f"{self.num_walls} wall segments>"
         )
 
-    def solid(self: Maze, x: int, y: int) -> bool:
+    def solid(
+        self: Maze, x: int, y: int, cell_size: int = 1, wall_size: int = 1
+    ) -> bool:
         """
         Return ``True`` if location (``x``, ``y``) in an ASCII-art version of the maze is inside a wall.
 
-        Note that the cell in position (0, 0) will take up locations (0, 0) to (3, 3),
-        the cell in position (0, 1) will take up locations (3, 0) to (6, 3), etc.
+        :param x: Horizontal position in the output.
+        :type x: int
+
+        :param y: Vertical position in the output.
+        :type y: int
+
+        :param cell_size: Width and height of cells (not counting walls) in characters,
+                          defaults to 1.
+        :type cell_size: int
+
+        :param wall_size: Thickness of walls in characters, defaults to 1.
+        :type wall_size: int
+
+        Note that with the default sizes, the cell in position (0, 0) will take up
+        locations (0, 0) to (3, 3), the cell in position (0, 1) will take up locations
+        (3, 0) to (6, 3), etc.
         """
-        if (x < 0 or x > 2 * self.cols) or (y < 0 or y > 2 * self.rows):
+        total_cell_size = cell_size + wall_size
+        if (x < 0 or x >= total_cell_size * self.cols + wall_size) or (
+            y < 0 or y >= total_cell_size * self.rows + wall_size
+        ):
             return False
-        if x % 2 == 0 and y % 2 == 0:
+        if x % total_cell_size < wall_size and y % total_cell_size < wall_size:
             return True
-        if x % 2 == 0:  # NS wall
-            return self.retrieve_wall("NS", y // 2, x // 2)
-        if y % 2 == 0:
-            return self.retrieve_wall("EW", y // 2, x // 2)
+        if x % total_cell_size < wall_size:  # NS wall
+            return self.retrieve_wall("NS", y // total_cell_size, x // total_cell_size)
+        if y % total_cell_size < wall_size:  # EW wall
+            return self.retrieve_wall("EW", y // total_cell_size, x // total_cell_size)
         return False
 
-    def str_version(self: Maze, wall_chr: str = "#") -> str:
+    def str_version(
+        self: Maze,
+        wall_chr: str = "#",
+        cell_size: int = 1,
+        wall_size: int = 1,
+        border_size: int = 0,
+    ) -> str:
         """
         Return ASCII art version of the maze.
 
@@ -470,14 +480,28 @@ class Maze:
         :param wall_chr: The character that represents a wall.
         :type wall_chr: str
 
+        :param cell_size: Width and height of cells (not counting walls) in characters,
+                          defaults to 1.
+        :type cell_size: int
+
+        :param wall_size: Thickness of walls in characters, defaults to 1.
+        :type wall_size: int
+
+        :param border_size: Thickness of the border, defaults to 0.
+        :type border_size: int
+
         :returns: An ASCII-art version of the maze.
         :rtype: str
         """
+        total_size = cell_size + wall_size
         return "\n".join(
             "".join(
-                wall_chr if self.solid(x, y) else " " for x in range(2 * self.cols + 1)
+                wall_chr
+                if self.solid(x - border_size, y - border_size, cell_size, wall_size)
+                else " "
+                for x in range(total_size * self.cols + wall_size + 2 * border_size)
             )
-            for y in range(2 * self.rows + 1)
+            for y in range(total_size * self.rows + wall_size + 2 * border_size)
         )
 
     def __str__(self: Maze) -> str:
