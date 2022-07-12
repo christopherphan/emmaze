@@ -43,15 +43,20 @@ def _make_text_step_range(start: int, end: int, include_end: bool) -> range:
 
 
 def _text_step(
-    start: mz.Position, end: mz.Position, include_end: bool = False
+    start: mz.Position,
+    end: mz.Position,
+    include_end: bool = False,
+    cell_size: int = 1,
+    wall_size: int = 1,
+    border_size: int = 0,
 ) -> list[tuple[int, int]]:
     """
     Return the characters that represent the steps between two positions.
 
     The positions must be in the same row or column.
     """
-    initial = start.text_location
-    final = end.text_location
+    initial = start.text_location(cell_size, wall_size, border_size)
+    final = end.text_location(cell_size, wall_size, border_size)
     if all(a != b for a, b in zip(initial, final)):
         raise ValueError("Not in the same row or same column.")
     if initial[0] == final[0]:  # same column
@@ -101,17 +106,28 @@ class MazePath:
         svg.interior.append(self.svg_path(maze, width, height, offset, dashpattern))
 
     def append_text_solution(
-        self: MazePath, maze_str: str, step_char: str = "+"
+        self: MazePath,
+        maze_str: str,
+        step_char: str = "+",
+        cell_size: int = 1,
+        wall_size: int = 1,
+        border_size: int = 0,
     ) -> str:
         """Append path to a text version of the maze."""
         text_path: list[tuple[int, int]] = sum(
             (
-                _text_step(start, end)
+                _text_step(
+                    start,
+                    end,
+                    cell_size=cell_size,
+                    wall_size=wall_size,
+                    border_size=border_size,
+                )
                 for start, end in zip(self.path[:-1], self.path[1:])
             ),
             start=[],
         ) + [  # type: ignore
-            self.path[-1].text_location
+            self.path[-1].text_location(cell_size, wall_size, border_size)
         ]
         text_version = maze_str.split("\n")
         for a, b in text_path:
@@ -232,8 +248,15 @@ class MazeSolver:
         path.add_path_to_svg(self.maze, width, height, svg, offset, dashpattern)
 
     def append_text_solution(
-        self: MazeSolver, maze_str: str, step_char: str = "+"
+        self: MazeSolver,
+        maze_str: str,
+        step_char: str = "+",
+        cell_size: int = 1,
+        wall_size: int = 1,
+        border_size: int = 0,
     ) -> str:
         """Append solution to a text version of the maze."""
         path: MazePath = self.run()
-        return path.append_text_solution(maze_str, step_char)
+        return path.append_text_solution(
+            maze_str, step_char, cell_size, wall_size, border_size
+        )

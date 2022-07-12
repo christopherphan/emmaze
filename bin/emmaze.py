@@ -29,6 +29,7 @@ import argparse
 from typing import Final
 
 import emmaze.maze as mz
+import emmaze.pngmazes as pngmazes
 import emmaze.solutions as solutions
 import emmaze.svgmazes as svgmazes
 from emmaze.jsonsupport import json_to_maze, maze_to_json
@@ -252,7 +253,12 @@ if __name__ == "__main__":
             if args["solutions"]:
                 solution_text = maze_text
                 for mp in solns:
-                    solution_text = mp.append_text_solution(solution_text)
+                    solution_text = mp.append_text_solution(
+                        solution_text,
+                        cell_size=cell_size,
+                        wall_size=args["wall_size"],
+                        border_size=args["border_size"],
+                    )
 
         elif args["output_type"] == "svg":
             if args["cell_size"] == -1:
@@ -290,9 +296,21 @@ if __name__ == "__main__":
                 cell_size = 1
             else:
                 cell_size = args["cell_size"]
-            with open(args["output_file"], "wb") as svgfile:
-                maze.make_png(
-                    svgfile, cell_size, args["wall_size"], args["border_size"]
+            maze_text = pngmazes.maze_png(
+                maze,
+                args["output_file"],
+                cell_size,
+                args["wall_size"],
+                args["border_size"],
+            )
+            if args["solutions"]:
+                pngmazes.soln_png(
+                    f"solution_{args['output_file']}",
+                    maze_solns=solns,
+                    maze_str=maze_text,
+                    cell_size=cell_size,
+                    wall_size=args["wall_size"],
+                    border_size=args["border_size"],
                 )
         else:
             with open(args["output_file"], "wt") as outfile:

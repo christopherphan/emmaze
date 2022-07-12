@@ -26,11 +26,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from io import BufferedWriter
 from random import choice, random, sample
 from typing import Final, Generic, Literal, Optional, TypeAlias, TypeVar
-
-import png  # type: ignore
 
 T = TypeVar("T")
 
@@ -97,11 +94,14 @@ class Position:
             return "NS", self.row, self.column
 
     def text_location(
-        self: Position, cell_size: int = 1, wall_size: int = 1
+        self: Position, cell_size: int = 1, wall_size: int = 1, border_size: int = 0
     ) -> tuple[int, int]:
         """Return character position for an text-art maze."""
         total_size = cell_size + wall_size
-        return total_size * self.column + wall_size, total_size * self.row + wall_size
+        return (
+            total_size * self.column + wall_size + border_size + cell_size // 2,
+            total_size * self.row + wall_size + border_size + cell_size // 2,
+        )
 
 
 @dataclass
@@ -507,40 +507,6 @@ class Maze:
     def __str__(self: Maze) -> str:
         """Return ``str(self)``."""
         return self.str_version()
-
-    def make_png(
-        self: Maze,
-        f: BufferedWriter,
-        cell_size: int = 1,
-        wall_size: int = 1,
-        border_size: int = 0,
-    ) -> None:
-        """
-        Write a PNG version of the maze to a file.
-
-        :param f: A file object in which to write the PNG.
-        :type f: io.TextIOWrapper
-
-        :param cell_size: The length and width of each cell in pixels, defaults to 1.
-        :type cell_size: int
-
-        :param wall_size: The thickness of each wall in pixels, defaults to 1.
-        :type wall_size: int
-
-        :param border_size: The thickness of the border in pixels, defaults to 0.
-        :type border_size: int
-        """
-        total_size = cell_size + wall_size
-        bitmap = [
-            [int(col) for col in row]
-            for row in self.str_version("0", cell_size, wall_size, border_size)
-            .replace(" ", "1")
-            .split("\n")
-        ]
-        width = self.cols * total_size + wall_size + 2 * border_size
-        height = self.rows * total_size + wall_size + 2 * border_size
-        writer = png.Writer(width, height, greyscale=True, bitdepth=1)
-        writer.write(f, bitmap)
 
 
 class MazeConstructor:
