@@ -80,8 +80,8 @@ def wall_follower_svg(
     wall_thickness = wall_size / (cell_size + wall_size)
     return svgmazes.WallFollowerSVGData(
         maze,
-        10 * maze.rows,
         10 * maze.cols,
+        10 * maze.rows,
         svgmazes.GraphicalCoordinates(5, 5),
         wall_thickness,
     )
