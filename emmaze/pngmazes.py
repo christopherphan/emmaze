@@ -84,8 +84,8 @@ def _make_maze_png(
     ]
     bitmap = [
         [int(col) for col in row]
-        for row in str_version.replace(wall_char, "0")
-        .replace(" ", "2")
+        for row in str_version.replace(wall_char, "2")
+        .replace(" ", "0")
         .replace(step_char, "1")
         .split("\n")
     ]
@@ -101,8 +101,8 @@ def maze_png(
     cell_size: int = 1,
     wall_size: int = 1,
     border_size: int = 0,
-    cell_color: tuple[int, int, int] = (0, 0, 0),
-    wall_color: tuple[int, int, int] = (0xFF, 0xFF, 0xFF),
+    cell_color: tuple[int, int, int] = (0xFF, 0xFF, 0xFF),
+    wall_color: tuple[int, int, int] = (0, 0, 0),
 ) -> str:
     """
     Write a PNG version of the maze to a file.
