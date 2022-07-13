@@ -108,15 +108,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--import_json",
         "-j",
-        nargs="?",
         type=str,
+        metavar="FILE",
         help="import a maze from a JSON file",
     )
 
     parser.add_argument(
         "--rows",
         "-r",
-        nargs="?",
+        metavar="R",
         type=int,
         help="number of rows in the maze",
         default=10,
@@ -125,8 +125,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cols",
         "-c",
-        nargs="?",
         type=int,
+        metavar="C",
         help="number of columns in the maze",
         default=10,
     )
@@ -135,7 +135,6 @@ if __name__ == "__main__":
         "--output-type",
         "-t",
         type=str,
-        nargs="?",
         choices=OUTPUT_TYPES,
         help="type of output to generate",
         default="text",
@@ -143,7 +142,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-file",
         "-o",
-        nargs="?",
         metavar="FILE",
         type=str,
         help="file to output to (default is standard output)",
@@ -152,8 +150,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cell-size",
         "-l",
-        nargs="?",
-        metavar="CELLSIZE",
+        metavar="SIZE",
         type=int,
         default=-1,
         help=(
@@ -165,8 +162,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--wall-size",
         "-w",
-        nargs="?",
-        metavar="WALLSIZE",
+        metavar="SIZE",
         type=int,
         default=1,
         help="thickness of the maze walls (default is 1)",
@@ -175,8 +171,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--border-size",
         "-b",
-        nargs="?",
-        metavar="BORDERSIZE",
+        metavar="SIZE",
         type=int,
         default=0,
         help="thickness of the border (default is 0)",
@@ -184,37 +179,34 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--cell-color",
-        nargs="?",
         metavar="COLOR",
         type=str,
-        default="#ffffff",
+        default="ffffff",
         help=(
             "color of the cell (for PNG and SVG output) as a hex triplet, e.g."
-            + " #ffc053. Default is #ffffff (white)."
+            + " ffc053. Default is ffffff (white)."
         ),
     )
 
     parser.add_argument(
         "--wall-color",
-        nargs="?",
         metavar="COLOR",
         type=str,
-        default="#000000",
+        default="000000",
         help=(
             "color of the walls (for PNG and SVG output) as a hex triplet, e.g."
-            + " #ffc053. Default is #000000 (black)."
+            + " ffc053. Default is 000000 (black)."
         ),
     )
 
     parser.add_argument(
         "--solution-color",
-        nargs="?",
         metavar="COLOR",
         type=str,
-        default="#ff0000",
+        default="ff0000",
         help=(
             "color of the solution (for PNG and SVG output) as a hex triplet, e.g."
-            + " #ffc053. Default is #ff0000 (red)."
+            + " ffc053. Default is ff0000 (red)."
         ),
     )
 
