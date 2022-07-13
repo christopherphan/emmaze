@@ -188,7 +188,7 @@ class DirectionInfo(Generic[T]):
         return {direction for direction in DIRECTIONS if self[direction] == value}
 
 
-@dataclass
+@dataclass(frozen=True)
 class MazeExit:
     """
     Represent an exit of the maze.
@@ -321,13 +321,26 @@ class Maze:
     :param exits: The exits of the maze.
     :type exits: Sequence[MazeExit]
 
-    Each of these parameters is an instance variable, except that ``exits`` is modified.
+    :param solutions: Directions from one exit (typically the first in ``exits``)
+                      to every other exit, given as a sequence of ``Position`` objects.
+    :type solutions: Optional[Mapping[MazeExit, Sequence[Position]]]
+
+    Each of these parameters is an instance variable, except that ``exits`` and ``solutions`` are modified.
 
     :ivar exits: The exists of the maze.
     :vartype exits: list[MazeExit]
+
+    :ivar solutions: The solutions of the maze.
+    :vartype solutions: dict[MazeExit, list[Position]]
     """
 
-    def __init__(self: Maze, rows: int, cols: int, exits: Sequence[MazeExit]) -> None:
+    def __init__(
+        self: Maze,
+        rows: int,
+        cols: int,
+        exits: Sequence[MazeExit],
+        solutions: Optional[Mapping[MazeExit, Sequence[Position]]] = None,
+    ) -> None:
         """Initialize a new object."""
         self.rows = rows
         self.cols = cols
@@ -352,6 +365,10 @@ class Maze:
                 self._ns_walls[cell_pos.column + col_offset].wallstatus[
                     cell_pos.row
                 ] = False
+        if solutions is None:
+            self.solutions: dict[MazeExit, list[Position]] = dict()
+        else:
+            self.solutions = {key: list(value) for key, value in solutions.items()}
 
     @property
     def wall_data(self: Maze) -> list[WallLine]:
@@ -606,6 +623,7 @@ class MazeWorker:
         maze: Maze,
         initial_cell: Position,
         spawn_probability: float = 0,
+        previous_path: Optional[Sequence[Position]] = None,
     ) -> None:
         """Initialize object."""
         self.maze = maze
@@ -614,6 +632,10 @@ class MazeWorker:
         self.maze_constructor: Optional[MazeConstructor] = None
         self.path: list[Position] = [initial_cell]
         self.alive = True
+        if previous_path is None:
+            self.complete_path = [initial_cell]
+        else:
+            self.complete_path = list(previous_path) + [initial_cell]
 
     def set_MazeConstructor(
         self: MazeWorker, maze_constructor: MazeConstructor
@@ -655,6 +677,7 @@ class MazeWorker:
         self.remove_wall(direction)
         self.current_cell = self.current_cell.neighbor[direction]
         self.path.append(self.current_cell)
+        self.complete_path.append(self.current_cell)
         self.maze_constructor.visited |= {self.current_cell}
 
     def spawn(self: MazeWorker, direction: DIRECTION_TYPE) -> None:
@@ -665,7 +688,10 @@ class MazeWorker:
             raise ValueError("Cannot move that direction.")
         self.remove_wall(direction)
         spawned = MazeWorker(
-            self.maze, self.current_cell.neighbor[direction], self.spawn_probability
+            self.maze,
+            self.current_cell.neighbor[direction],
+            self.spawn_probability,
+            previous_path=self.complete_path,
         )
         self.maze_constructor.add_worker(spawned)
 
@@ -675,6 +701,12 @@ class MazeWorker:
             raise ValueError("Maze constructor is not set.")
         if not self.alive:
             return None
+        for exit in self.maze.exits:
+            if (
+                exit not in self.maze.solutions
+                and exit.cell_position(self.maze) == self.current_cell
+            ):
+                self.maze.solutions[exit] = self.complete_path.copy()
         while self.alive and not (un := self.unvisited_neighbors).any:
             self.backtrack()
         if self.alive:
@@ -694,6 +726,7 @@ class MazeWorker:
         """
         if self.path:
             self.path.pop()
+            self.complete_path.pop()
         if self.path:
             self.current_cell = self.path[-1]
         else:

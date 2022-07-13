@@ -271,13 +271,16 @@ if __name__ == "__main__":
         if args["solutions"] and not solns:
             if len(maze_exits) < 2:
                 raise ValueError("Need at least two exits.")
-            maze_solvers = [
-                solutions.MazeSolver(
-                    maze, start.cell_position(maze), end.cell_position(maze)
-                )
-                for start, end in zip(maze_exits[:-1], maze_exits[1:])
-            ]
-            solns = [solver.run() for solver in maze_solvers]
+            if maze.solutions:
+                solns = [solutions.MazePath(k) for k in maze.solutions.values()]
+            else:
+                maze_solvers = [
+                    solutions.MazeSolver(
+                        maze, start.cell_position(maze), end.cell_position(maze)
+                    )
+                    for start, end in zip(maze_exits[:-1], maze_exits[1:])
+                ]
+                solns = [solver.run() for solver in maze_solvers]
 
         if args["output_type"] in WALL_CHARACTER_DICT:
             if args["cell_size"] == -1:
