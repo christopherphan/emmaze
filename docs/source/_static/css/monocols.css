@@ -10,4 +10,5 @@
       rgba(0, 0, 0, 0.05) 2.5rem
     ),
     repeating-linear-gradient(to right, azure, azure 1ch, beige 1ch, beige 2ch);
+  background-attachment: scroll, local;
 }

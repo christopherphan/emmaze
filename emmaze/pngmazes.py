@@ -89,8 +89,8 @@ def _make_maze_png(
         .replace(step_char, "1")
         .split("\n")
     ]
-    width = len(bitmap)
-    height = len(bitmap[0])
+    width = len(bitmap[0])
+    height = len(bitmap)
     writer = png.Writer(width, height, palette=palette, bitdepth=2)
     writer.write(f, bitmap)
 
