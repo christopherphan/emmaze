@@ -30,6 +30,7 @@ from typing import Optional
 import emmaze.maze as mz
 import emmaze.svgfunctions as svgfunctions
 import emmaze.svgmazes as svgmazes
+from emmaze._resources import _to_web_color
 
 
 def _make_text_step_range(start: int, end: int, include_end: bool) -> range:
@@ -85,13 +86,14 @@ class MazePath:
         height: float,
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
         dashpattern: Optional[str] = None,
+        solution_color: tuple[int, int, int] = (0xFF, 0, 0),
     ) -> svgfunctions.Element:
         """Convert to an SVG path."""
         svg_info = svgmazes.SVGInfo(width, height, maze.rows, maze.cols, offset)
         graphical_path = svgmazes.GraphicalPath(
             [svg_info.cell_position(k) for k in self.path]
         )
-        return graphical_path.svg_polyline("red", dashpattern)
+        return graphical_path.svg_polyline(_to_web_color(solution_color), dashpattern)
 
     def add_path_to_svg(
         self: MazePath,
@@ -101,9 +103,12 @@ class MazePath:
         svg: svgfunctions.Element,
         offset: svgmazes.GraphicalCoordinates = svgmazes.COORD_ZERO,
         dashpattern: Optional[str] = None,
+        solution_color: tuple[int, int, int] = (0xFF, 0, 0),
     ) -> None:
         """Add the path to the interior of the element (in-place)."""
-        svg.interior.append(self.svg_path(maze, width, height, offset, dashpattern))
+        svg.interior.append(
+            self.svg_path(maze, width, height, offset, dashpattern, solution_color)
+        )
 
     def append_text_solution(
         self: MazePath,

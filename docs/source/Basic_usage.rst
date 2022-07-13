@@ -233,6 +233,7 @@ the ratio between elements of the maze. For example, if we set the cell-size to
    :width: 500px
    :height: 500px
 
+
 Solutions
 ---------
 Solutions are generated with the ``--solutions`` option. If output to a file is
@@ -298,6 +299,23 @@ Solutions can also be produced for text-art and SVG mazes.
     # # # # ### # # #+#+### # #+###
     # #     #     # #+++#   #  +++ 
     ###############################
+
+Customize colors
+----------------
+
+The options ``--cell-color``, ``--wall-color``, and ``--solution-color`` can be
+used to customize the color output in SVG or PNG formats. Colors are specified
+as hex-triplets (e.g. ``FF3333``).
+
+.. code-block:: console
+
+   $ ./emmaze.py -t svg --west-exit 0 --east-exit 9 -o maze8.svg --cell-color FF9999 --wall-color 0000FF --solution-color 00FF00 --solutions
+
+The file ``solution_maze8.svg`` will look like this:
+
+.. image:: solution_maze8.svg
+   :height: 220px
+   :width: 220px
 
 JSON support
 ------------

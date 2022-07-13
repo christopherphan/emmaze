@@ -32,6 +32,7 @@ import emmaze.maze as mz
 import emmaze.pngmazes as pngmazes
 import emmaze.solutions as solutions
 import emmaze.svgmazes as svgmazes
+from emmaze._resources import _parse_color
 from emmaze.jsonsupport import json_to_maze, maze_to_json
 
 __author__ = "Christopher L. Phan"
@@ -74,7 +75,11 @@ WALL_CHARACTER_DICT: Final[dict[str, str]] = {"text": "#", "block": "\u2588"}
 
 
 def wall_follower_svg(
-    maze: mz.Maze, cell_size: int = 19, wall_size: int = 1
+    maze: mz.Maze,
+    cell_size: int = 19,
+    wall_size: int = 1,
+    cell_color: tuple[int, int, int] = (0xFF, 0xFF, 0xFF),
+    wall_color: tuple[int, int, int] = (0, 0, 0),
 ) -> svgmazes.WallFollowerSVGData:
     """Create a maze and output to SVG using WallFollower approach."""
     wall_thickness = wall_size / (cell_size + wall_size)
@@ -84,6 +89,8 @@ def wall_follower_svg(
         10 * maze.rows,
         svgmazes.GraphicalCoordinates(5, 5),
         wall_thickness,
+        cell_color=cell_color,
+        wall_color=wall_color,
     )
 
 
@@ -172,7 +179,43 @@ if __name__ == "__main__":
         metavar="BORDERSIZE",
         type=int,
         default=0,
-        help=("thickness of the border (default is 0)"),
+        help="thickness of the border (default is 0)",
+    )
+
+    parser.add_argument(
+        "--cell-color",
+        nargs="?",
+        metavar="COLOR",
+        type=str,
+        default="#ffffff",
+        help=(
+            "color of the cell (for PNG and SVG output) as a hex triplet, e.g."
+            + " #ffc053. Default is #ffffff (white)."
+        ),
+    )
+
+    parser.add_argument(
+        "--wall-color",
+        nargs="?",
+        metavar="COLOR",
+        type=str,
+        default="#000000",
+        help=(
+            "color of the walls (for PNG and SVG output) as a hex triplet, e.g."
+            + " #ffc053. Default is #000000 (black)."
+        ),
+    )
+
+    parser.add_argument(
+        "--solution-color",
+        nargs="?",
+        metavar="COLOR",
+        type=str,
+        default="#ff0000",
+        help=(
+            "color of the solution (for PNG and SVG output) as a hex triplet, e.g."
+            + " #ffc053. Default is #ff0000 (red)."
+        ),
     )
 
     parser.add_argument(
@@ -208,6 +251,11 @@ if __name__ == "__main__":
             raise ValueError("Invalid wall size; must be a positive integer.")
         if args["border_size"] < 0:
             raise ValueError("Invalid border size; must be a nonnegative integer.")
+
+        if args["output_type"] in ["svg", "png"]:
+            cell_color = _parse_color(args["cell_color"])
+            wall_color = _parse_color(args["wall_color"])
+            solution_color = _parse_color(args["solution_color"])
         maze: mz.Maze
         maze_exits: list[mz.MazeExit]
         solns: list[solutions.MazePath] = []
@@ -265,7 +313,9 @@ if __name__ == "__main__":
                 cell_size = 19
             else:
                 cell_size = args["cell_size"]
-            maze_svg_data = wall_follower_svg(maze, cell_size, args["wall_size"])
+            maze_svg_data = wall_follower_svg(
+                maze, cell_size, args["wall_size"], cell_color, wall_color
+            )
             maze_text = maze_svg_data.SVG_standalone().output()
             if args["solutions"]:
                 solution_text = maze_svg_data.SVG_standalone(
@@ -276,6 +326,7 @@ if __name__ == "__main__":
                             maze_svg_data.svg_info.height,
                             maze_svg_data.svg_info.offset,
                             dashpattern="5,5",
+                            solution_color=solution_color,
                         )
                         for mp in solns
                     ]
@@ -302,6 +353,8 @@ if __name__ == "__main__":
                 cell_size,
                 args["wall_size"],
                 args["border_size"],
+                cell_color=cell_color,
+                wall_color=wall_color,
             )
             if args["solutions"]:
                 pngmazes.soln_png(
@@ -311,6 +364,9 @@ if __name__ == "__main__":
                     cell_size=cell_size,
                     wall_size=args["wall_size"],
                     border_size=args["border_size"],
+                    cell_color=cell_color,
+                    wall_color=wall_color,
+                    soln_color=solution_color,
                 )
         else:
             with open(args["output_file"], "wt") as outfile:

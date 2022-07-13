@@ -32,6 +32,7 @@ from typing import Final, Literal, NamedTuple, Optional, TypeAlias
 
 import emmaze.maze as mz
 import emmaze.svgfunctions as svgfunctions
+from emmaze._resources import _to_web_color
 
 WALL_THICKNESS_SETTING: TypeAlias = Literal["cellsize", "absolute"]
 
@@ -486,6 +487,8 @@ class WallFollowerSVGData:
         offset: GraphicalCoordinates = COORD_ZERO,
         wall_thickness: float = 0.05,
         wall_thickness_units: WALL_THICKNESS_SETTING = "cellsize",
+        cell_color: tuple[int, int, int] = (0xFF, 0xFF, 0xFF),
+        wall_color: tuple[int, int, int] = (0, 0, 0),
     ) -> None:
         """Initialize the object."""
         self.maze = maze
@@ -507,6 +510,8 @@ class WallFollowerSVGData:
         self._wall_thickness_gc = GraphicalCoordinates(
             self.wall_thickness, self.wall_thickness
         )
+        self.cell_color = cell_color
+        self.wall_color = wall_color
 
     def wall_coordinates_from_position(
         self: WallFollowerSVGData, position: mz.Position, direction: mz.DIRECTION_TYPE
@@ -544,7 +549,11 @@ class WallFollowerSVGData:
         svg_elts = [
             (
                 (psa := gp.polygon_signed_area),
-                gp.svg_polygon("white" if psa >= 0 else "black"),
+                gp.svg_polygon(
+                    _to_web_color(self.cell_color)
+                    if psa >= 0
+                    else _to_web_color(self.wall_color)
+                ),
             )
             for gp in self.graphical_path_components
         ]
@@ -557,6 +566,7 @@ class WallFollowerSVGData:
             self.svg_info.width + 2 * self.svg_info.offset.x,
             self.svg_info.height + 2 * self.svg_info.offset.y,
             [self.walls_SVG],
+            _to_web_color(self.cell_color),
         )
 
     def SVG_standalone(
@@ -573,4 +583,5 @@ class WallFollowerSVGData:
             self.svg_info.width + 2 * self.svg_info.offset.x,
             self.svg_info.height + 2 * self.svg_info.offset.y,
             [self.walls_SVG] + add_elts,
+            _to_web_color(self.cell_color),
         )
