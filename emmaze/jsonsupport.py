@@ -103,9 +103,10 @@ def json_to_maze(json_text: str) -> tuple[mz.Maze, list[MazePath]]:
         mz.MazeExit(item[0], item[1]) for item in mazedata.get("exits", [])
     ]
     maze = mz.Maze(mazedata["rows"], mazedata["cols"], exits)
+    lengths = {"row_walls": mazedata["cols"] + 1, "col_walls": mazedata["rows"] + 1}
     for key, orientation in zip(["row_walls", "col_walls"], ["EW", "NS"]):
         for idx, value in enumerate(mazedata[key]):
-            wallstatus = _int_to_wallstatus(value, mazedata[key[:3] + "s"] + 1)
+            wallstatus = _int_to_wallstatus(value, lengths[key])
             for j, val in wallstatus.items():
                 if not val:
                     maze.remove_wall(
